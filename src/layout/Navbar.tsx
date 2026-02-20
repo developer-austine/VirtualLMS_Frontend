@@ -10,9 +10,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/context/authContext";
 
-const guestLinks = [
-  { label: "Home", href: "/" },
-];
+const guestLinks = [{ label: "Home", href: "/" }];
 
 const studentLinks = [
   { label: "Home", href: "/" },
@@ -44,7 +42,8 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="bg-[#c9a227] shadow-md relative z-50">
+    // ✅ sticky top-0 z-50 — stays fixed on scroll
+    <nav className="sticky top-0 z-50 bg-[#c9a227] shadow-md">
       <div className="w-full px-6 py-3 flex items-center justify-between">
 
         {/* Logo + Brand */}
@@ -79,7 +78,7 @@ const Navbar = () => {
             </Link>
           ))}
 
-          {/* E-Library dropdown — always visible */}
+          {/* E-Library dropdown */}
           <div
             className="relative"
             onMouseEnter={() => setELibOpen(true)}
@@ -102,21 +101,16 @@ const Navbar = () => {
             </div>
           </div>
 
-          {/* Auth icons when logged in */}
+          {/* Auth icons */}
           {isAuthenticated && (
             <div className="flex items-center gap-2 ml-3 pl-3 border-l border-[#1a2a5e]/30">
-              {/* Notifications */}
               <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#1a2a5e]/10 transition-colors text-[#1a2a5e]">
                 <Bell size={18} />
                 <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
               </button>
-
-              {/* Messages */}
               <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#1a2a5e]/10 transition-colors text-[#1a2a5e]">
                 <MessageSquare size={18} />
               </button>
-
-              {/* User Avatar Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <button className="flex items-center gap-1.5 ml-1">
@@ -184,10 +178,7 @@ const Navbar = () => {
             </Link>
           ))}
           {isAuthenticated && (
-            <button
-              onClick={handleLogout}
-              className="block py-2.5 text-red-400 font-semibold w-full text-left"
-            >
+            <button onClick={handleLogout} className="block py-2.5 text-red-400 font-semibold w-full text-left">
               Log out
             </button>
           )}

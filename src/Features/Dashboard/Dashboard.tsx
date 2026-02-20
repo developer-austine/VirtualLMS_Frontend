@@ -1,11 +1,12 @@
 import { BookOpen, CheckCircle, TrendingUp, Clock } from "lucide-react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/authContext";
 import { courses } from "./data/courses";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
 
   const stats = [
     { label: "Total Courses", icon: BookOpen, color: "text-blue-500", value: courses.length },
@@ -15,7 +16,6 @@ const Dashboard = () => {
   ];
 
   return (
-    // Image is the full page background — content floats on top
     <div
       className="min-h-screen w-full relative"
       style={{
@@ -25,7 +25,6 @@ const Dashboard = () => {
         backgroundAttachment: "fixed",
       }}
     >
-      {/* All content floats on top of image — no overlay */}
       <div className="relative z-10 max-w-6xl mx-auto px-6 py-8">
 
         {/* Welcome text */}
@@ -57,7 +56,7 @@ const Dashboard = () => {
           ))}
         </div>
 
-        {/* Recent Courses white card */}
+        {/* Recent Courses */}
         <div className="bg-white rounded-xl border border-gray-200 shadow-lg p-6">
           <div className="flex items-center justify-between mb-5">
             <h2 className="text-lg font-black text-[#1a2a5e]">Recent Courses</h2>
@@ -70,6 +69,7 @@ const Dashboard = () => {
             {courses.slice(0, 3).map((course) => (
               <div
                 key={course.id}
+                onClick={() => navigate(`/course/${course.id}`)} // ✅ navigate on click
                 className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-shadow cursor-pointer group"
               >
                 <div className={`${course.color} relative overflow-hidden`} style={{ height: "160px" }}>
