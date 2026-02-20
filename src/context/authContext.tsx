@@ -12,8 +12,13 @@ const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(() => {
-    const saved = sessionStorage.getItem("kcau_user");
-    return saved ? JSON.parse(saved) : null;
+    try {
+      const saved = sessionStorage.getItem("kcau_user");
+      return saved ? JSON.parse(saved) : null;
+    } catch {
+      sessionStorage.removeItem("kcau_user");
+      return null;
+    }
   });
 
   const login = (email: string, password: string) => {
