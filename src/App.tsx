@@ -1,17 +1,24 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./context/authContext";
 import MainLayout from "./layout/Mainlayout";
 import HomePage from "./Features/Home/HomePage";
 import Login from "./Features/Authentication/Login";
+import Dashboard from "./Features/Dashboard/Dashboard";
+import MyCourses from "./Features/Dashboard/MyCourses";
 
 function App() {
   return (
     <BrowserRouter>
-      <MainLayout>
-        <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/login" element={<Login />} />
-        </Routes>
-      </MainLayout>
+      <AuthProvider>
+        <MainLayout>
+          <Routes>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/login" element={<Login />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/my-courses" element={<MyCourses />} />
+          </Routes>
+        </MainLayout>
+      </AuthProvider>
     </BrowserRouter>
   );
 }
