@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Search, LayoutGrid, List, MoreVertical, CheckCircle } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ import { courses } from "./data/courses";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
 const MyCourses = () => {
+  const navigate = useNavigate();
   const [search, setSearch] = useState("");
   const [view, setView] = useState<"card" | "list">("card");
   const [filter, setFilter] = useState("All");
@@ -28,9 +30,8 @@ const MyCourses = () => {
   });
 
   return (
-    // Outer wrapper — image is the background, fills entire page
     <div
-      className="min-h-screen w-full relative"
+      className="min-h-screen w-full"
       style={{
         backgroundImage: `url(${schoolOfBusiness})`,
         backgroundSize: "cover",
@@ -38,11 +39,9 @@ const MyCourses = () => {
         backgroundAttachment: "fixed",
       }}
     >
-      {/* White course card floats ON TOP of image */}
       <div className="relative z-10 max-w-5xl mx-auto px-6 py-8">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 p-6">
 
-          {/* Title */}
           <h1 className="text-2xl font-black text-[#1a2a5e] mb-0.5">My courses</h1>
           <p className="text-sm text-gray-500 mb-5">Course overview</p>
 
@@ -113,10 +112,13 @@ const MyCourses = () => {
               view === "card" ? (
                 <div
                   key={course.id}
+                  onClick={() => navigate(`/course/${course.id}`)}
                   className="border border-gray-200 rounded-lg overflow-hidden hover:shadow-md transition-all duration-200 cursor-pointer group"
                 >
-                  {/* Tall colored banner */}
-                  <div className={`${course.color} relative overflow-hidden`} style={{ height: "160px" }}>
+                  <div
+                    className={`${course.color} relative overflow-hidden`}
+                    style={{ height: "160px" }}
+                  >
                     <div className="absolute inset-0 flex items-center justify-center opacity-20">
                       {[...Array(6)].map((_, i) => (
                         <div
@@ -128,7 +130,6 @@ const MyCourses = () => {
                     </div>
                   </div>
 
-                  {/* Body */}
                   <div className="p-4 bg-white">
                     <p className="text-xs font-bold text-[#1a2a5e] leading-snug mb-1 group-hover:text-[#c9a227] transition-colors line-clamp-2">
                       {course.code}:{course.name}:{course.lecturer}
@@ -143,24 +144,28 @@ const MyCourses = () => {
                       ) : (
                         <span className="text-xs text-gray-400">—</span>
                       )}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button className="text-gray-400 hover:text-[#1a2a5e] p-1 rounded transition-colors">
-                            <MoreVertical size={14} />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem>View course</DropdownMenuItem>
-                          <DropdownMenuItem>Mark as complete</DropdownMenuItem>
-                          <DropdownMenuItem>Remove from view</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      {/* Stop propagation so 3-dot menu doesn't trigger card click */}
+                      <div onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <button className="text-gray-400 hover:text-[#1a2a5e] p-1 rounded transition-colors">
+                              <MoreVertical size={14} />
+                            </button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem>View course</DropdownMenuItem>
+                            <DropdownMenuItem>Mark as complete</DropdownMenuItem>
+                            <DropdownMenuItem>Remove from view</DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                     </div>
                   </div>
                 </div>
               ) : (
                 <div
                   key={course.id}
+                  onClick={() => navigate(`/course/${course.id}`)}
                   className="flex items-center gap-4 border border-gray-200 rounded-lg p-3 bg-white hover:shadow-sm transition-all cursor-pointer group"
                 >
                   <div className={`${course.color} w-14 h-14 rounded-md flex-shrink-0`} />
