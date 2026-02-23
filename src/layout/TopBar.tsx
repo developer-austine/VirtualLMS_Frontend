@@ -26,7 +26,7 @@ const TopBar = () => {
           <Phone size={14} />
           <span>Call us : (+254) 0709813800</span>
         </a>
-        <a href="mailto:elearning@kcau.ac.ke" className="hidden sm:flex items-center gap-2 hover:text-[#c9a227] transition-colors duration-200">
+        <a href="mailto:elearning@skylimit.ac.ke" className="hidden sm:flex items-center gap-2 hover:text-[#c9a227] transition-colors duration-200">
           <Mail size={14} />
           <span>E-mail : elearning@skylimit.ac.ke</span>
         </a>

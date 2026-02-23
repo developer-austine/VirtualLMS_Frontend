@@ -2,7 +2,8 @@ import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
   ChevronDown, ChevronUp, ArrowLeft, Plus, Megaphone,
-  Link2, Video, FileText, HelpCircle, Trash2, Users, BarChart2,
+  Link2, Video, FileText, HelpCircle, Trash2,
+  Users, BarChart2, NotebookPen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -10,40 +11,44 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { lecturerCourses, lecturerCourseSections, type CourseMaterial } from "./data/lecturerCourses";
+import InlineNotesViewer from "./InlineNotesViewer";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
-const typeIcon = (type: CourseMaterial["type"]) => {
+// ── Icon per material type ──────────────────────
+const typeIcon = (type: CourseMaterial["type"], size = 15) => {
   switch (type) {
-    case "announcement": return <Megaphone size={15} className="text-[#c9a227]" />;
-    case "link":         return <Link2 size={15} className="text-blue-500" />;
-    case "video":        return <Video size={15} className="text-red-500" />;
-    case "file":         return <FileText size={15} className="text-orange-400" />;
-    case "quiz":         return <HelpCircle size={15} className="text-purple-500" />;
-    case "assignment":   return <FileText size={15} className="text-green-500" />;
+    case "announcement": return <Megaphone     size={size} className="text-[#c9a227]"  />;
+    case "link":         return <Link2         size={size} className="text-blue-500"   />;
+    case "video":        return <Video         size={size} className="text-red-500"    />;
+    case "file":         return <FileText      size={size} className="text-orange-400" />;
+    case "quiz":         return <HelpCircle    size={size} className="text-purple-500" />;
+    case "assignment":   return <FileText      size={size} className="text-green-500"  />;
+    case "notes":        return <NotebookPen   size={size} className="text-indigo-500" />;
   }
 };
 
 const materialTypes: CourseMaterial["type"][] = [
-  "file", "video", "quiz", "assignment", "link", "announcement"
+  "file", "video", "quiz", "assignment", "link", "announcement", "notes",
 ];
+
+// Label for notes type in dialog
+const typeLabel = (t: CourseMaterial["type"]) =>
+  t === "notes" ? "📝 Notes" : t;
 
 const LecturerCourseDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const course = lecturerCourses.find((c) => c.id === id);
-  const [sections, setSections] = useState(lecturerCourseSections[id ?? ""] ?? []);
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
-
-  // Add material dialog
-  const [addDialog, setAddDialog] = useState(false);
+  const course  = lecturerCourses.find((c) => c.id === id);
+  const [sections,    setSections]    = useState(lecturerCourseSections[id ?? ""] ?? []);
+  const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set());
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+  const [addDialog,   setAddDialog]   = useState(false);
   const [targetSection, setTargetSection] = useState<string | null>(null);
-  const [newTitle, setNewTitle] = useState("");
-  const [newType, setNewType] = useState<CourseMaterial["type"]>("file");
+  const [newTitle,    setNewTitle]    = useState("");
+  const [newType,     setNewType]     = useState<CourseMaterial["type"]>("file");
   const [newSubtitle, setNewSubtitle] = useState("");
-
-  // Add section
-  const [sectionDialog, setSectionDialog] = useState(false);
+  const [sectionDialog,   setSectionDialog]   = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
 
   if (!course) return (
@@ -53,21 +58,43 @@ const LecturerCourseDetail = () => {
   );
 
   const toggleSection = (sid: string) =>
-    setCollapsed((p) => { const n = new Set(p); n.has(sid) ? n.delete(sid) : n.add(sid); return n; });
+    setCollapsed((p) => {
+      const n = new Set(p);
+      n.has(sid) ? n.delete(sid) : n.add(sid);
+      return n;
+    });
 
   const addMaterial = () => {
     if (!newTitle.trim() || !targetSection) return;
+    const matId = `m${Date.now()}`;
+
     setSections((prev) =>
       prev.map((s) =>
         s.id === targetSection
-          ? { ...s, materials: [...s.materials, {
-              id: `m${Date.now()}`, type: newType,
-              title: newTitle.trim(), subtitle: newSubtitle.trim() || undefined,
-              uploadedAt: new Date().toISOString().split("T")[0],
-            }] }
+          ? {
+              ...s,
+              materials: [...s.materials, {
+                id:         matId,
+                type:       newType,
+                title:      newTitle.trim(),
+                subtitle:   newSubtitle.trim() || undefined,
+                uploadedAt: new Date().toISOString().split("T")[0],
+              }],
+            }
           : s
       )
     );
+
+    // If notes — navigate directly to the editor
+    if (newType === "notes") {
+      setAddDialog(false);
+      setNewTitle(""); setNewSubtitle("");
+      navigate(`/lecturer/course/${id}/notes/${matId}`, {
+        state: { title: newTitle.trim() },
+      });
+      return;
+    }
+
     setNewTitle(""); setNewSubtitle(""); setAddDialog(false);
   };
 
@@ -88,6 +115,19 @@ const LecturerCourseDetail = () => {
     setNewSectionTitle(""); setSectionDialog(false);
   };
 
+  const toggleNotes = (matId: string) =>
+    setExpandedNotes((p) => {
+      const n = new Set(p);
+      n.has(matId) ? n.delete(matId) : n.add(matId);
+      return n;
+    });
+
+  const openMaterial = (mat: CourseMaterial) => {
+    if (mat.type === "notes") {
+      toggleNotes(mat.id);
+    }
+  };
+
   return (
     <div
       className="min-h-screen w-full"
@@ -101,7 +141,7 @@ const LecturerCourseDetail = () => {
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 
-          {/* Header */}
+          {/* ── Header ─────────────────────────── */}
           <div className="px-6 py-5 border-b border-gray-100">
             <button
               onClick={() => navigate("/lecturer/courses")}
@@ -114,41 +154,30 @@ const LecturerCourseDetail = () => {
                 <h1 className="text-lg font-black text-[#1a2a5e]">{course.code}: {course.name}</h1>
                 <p className="text-xs text-gray-400 mt-0.5">{course.stream} · {course.trim}</p>
               </div>
-              {/* Quick actions */}
               <div className="flex items-center gap-2">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs gap-1 border-gray-200"
-                  onClick={() => navigate(`/lecturer/course/${id}/students`)}
-                >
+                <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200"
+                  onClick={() => navigate(`/lecturer/course/${id}/students`)}>
                   <Users size={13} /> Students
                 </Button>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  className="text-xs gap-1 border-gray-200"
-                  onClick={() => navigate(`/lecturer/course/${id}/grades`)}
-                >
+                <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200"
+                  onClick={() => navigate(`/lecturer/course/${id}/grades`)}>
                   <BarChart2 size={13} /> Grades
                 </Button>
-                <Button
-                  size="sm"
-                  className="text-xs gap-1 bg-[#1a2a5e] hover:bg-[#132047] text-white"
-                  onClick={() => setSectionDialog(true)}
-                >
+                <Button size="sm" className="text-xs gap-1 bg-[#1a2a5e] hover:bg-[#132047] text-white"
+                  onClick={() => setSectionDialog(true)}>
                   <Plus size={13} /> Add Section
                 </Button>
               </div>
             </div>
           </div>
 
-          {/* Sections */}
+          {/* ── Sections ───────────────────────── */}
           <div className="p-6 space-y-3">
             {sections.map((section) => {
               const isCollapsed = collapsed.has(section.id);
               return (
                 <div key={section.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                  {/* Section header */}
                   <div className="flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
                     <button
                       className="flex items-center gap-2 flex-1 text-left"
@@ -156,7 +185,7 @@ const LecturerCourseDetail = () => {
                     >
                       {isCollapsed
                         ? <ChevronDown size={15} className="text-[#c9a227]" />
-                        : <ChevronUp size={15} className="text-[#c9a227]" />
+                        : <ChevronUp   size={15} className="text-[#c9a227]" />
                       }
                       <span className="font-bold text-sm text-[#1a2a5e]">{section.title}</span>
                       <span className="text-xs text-gray-400">({section.materials.length})</span>
@@ -169,27 +198,81 @@ const LecturerCourseDetail = () => {
                     </button>
                   </div>
 
+                  {/* Materials list */}
                   {!isCollapsed && (
                     <div className="divide-y divide-gray-100">
                       {section.materials.length === 0 && (
-                        <p className="text-xs text-gray-400 px-4 py-3 italic">No materials yet. Click "Add material" to get started.</p>
+                        <p className="text-xs text-gray-400 px-4 py-3 italic">
+                          No materials yet. Click "Add material" to get started.
+                        </p>
                       )}
                       {section.materials.map((mat) => (
-                        <div key={mat.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 group">
-                          <div className="flex items-start gap-3">
-                            <div className="mt-0.5">{typeIcon(mat.type)}</div>
-                            <div>
-                              <p className="text-sm font-medium text-[#c9a227]">{mat.title}</p>
-                              {mat.subtitle && <p className="text-xs text-gray-400">{mat.subtitle}</p>}
-                              <p className="text-[10px] text-gray-300 mt-0.5">Added {mat.uploadedAt}</p>
+                        <div key={mat.id}>
+                          <div
+                            className={`flex items-center justify-between px-4 py-3 hover:bg-gray-50 group transition-colors ${
+                              mat.type === "notes" ? "cursor-pointer" : ""
+                            }`}
+                            onClick={() => openMaterial(mat)}
+                          >
+                            <div className="flex items-start gap-3">
+                              {mat.type === "notes" ? (
+                                <div className="mt-0.5 flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded-full">
+                                  <NotebookPen size={12} className="text-indigo-500" />
+                                  <span className="text-[10px] font-bold text-indigo-600">Notes</span>
+                                </div>
+                              ) : (
+                                <div className="mt-0.5">{typeIcon(mat.type)}</div>
+                              )}
+                              <div>
+                                <p className={`text-sm font-medium ${
+                                  mat.type === "notes"
+                                    ? "text-indigo-600 group-hover:underline"
+                                    : "text-[#c9a227]"
+                                }`}>
+                                  {mat.title}
+                                  {mat.type === "notes" && (
+                                    <span className="ml-2 text-[10px] text-indigo-400">
+                                      {expandedNotes.has(mat.id) ? "▲ collapse" : "▼ expand"}
+                                    </span>
+                                  )}
+                                </p>
+                                {mat.subtitle && <p className="text-xs text-gray-400">{mat.subtitle}</p>}
+                                <p className="text-[10px] text-gray-300 mt-0.5">Added {mat.uploadedAt}</p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {mat.type === "notes" && (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    navigate(`/lecturer/course/${id}/notes/${mat.id}`, {
+                                      state: { title: mat.title },
+                                    });
+                                  }}
+                                  className="text-[11px] font-bold text-indigo-500 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-full transition-colors opacity-0 group-hover:opacity-100"
+                                >
+                                  ✏️ Edit
+                                </button>
+                              )}
+                              <button
+                                onClick={(e) => { e.stopPropagation(); deleteMaterial(section.id, mat.id); }}
+                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-50 text-red-400"
+                              >
+                                <Trash2 size={13} />
+                              </button>
                             </div>
                           </div>
-                          <button
-                            onClick={() => deleteMaterial(section.id, mat.id)}
-                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-50 text-red-400"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+
+                          {/* ── Inline notes viewer ── */}
+                          {mat.type === "notes" && expandedNotes.has(mat.id) && (
+                            <InlineNotesViewer
+                              materialId={mat.id}
+                              isLecturer={true}
+                              onEdit={() => navigate(`/lecturer/course/${id}/notes/${mat.id}`, {
+                                state: { title: mat.title },
+                              })}
+                            />
+                          )}
                         </div>
                       ))}
                     </div>
@@ -201,60 +284,94 @@ const LecturerCourseDetail = () => {
         </div>
       </div>
 
-      {/* Add Material Dialog */}
+      {/* ── Add Material Dialog ─────────────────── */}
       <Dialog open={addDialog} onOpenChange={setAddDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#1a2a5e] font-black">Add Material</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 mt-2">
+          <div className="space-y-4 mt-2">
+
+            {/* Type grid */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Type</label>
-              <div className="grid grid-cols-3 gap-2">
+              <label className="text-xs font-semibold text-gray-600 mb-2 block">Type</label>
+              <div className="grid grid-cols-4 gap-2">
                 {materialTypes.map((t) => (
                   <button
                     key={t}
                     onClick={() => setNewType(t)}
-                    className={`flex items-center gap-1.5 px-2 py-2 rounded-lg border text-xs font-semibold capitalize transition-colors ${
+                    className={`flex flex-col items-center gap-1.5 px-2 py-3 rounded-xl border text-xs font-semibold capitalize transition-all ${
                       newType === t
-                        ? "border-[#c9a227] bg-amber-50 text-[#1a2a5e]"
+                        ? t === "notes"
+                          ? "border-indigo-400 bg-indigo-50 text-indigo-700"
+                          : "border-[#c9a227] bg-amber-50 text-[#1a2a5e]"
                         : "border-gray-200 text-gray-500 hover:border-gray-300"
                     }`}
                   >
-                    {typeIcon(t)} {t}
+                    {typeIcon(t, 18)}
+                    <span className="text-[10px]">{t === "notes" ? "Notes" : t}</span>
                   </button>
                 ))}
               </div>
             </div>
+
+            {/* Notes special CTA */}
+            {newType === "notes" && (
+              <div className="flex items-start gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+                <NotebookPen size={20} className="text-indigo-500 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-xs font-black text-indigo-700">Rich Notes Editor</p>
+                  <p className="text-[11px] text-indigo-500 mt-0.5">
+                    You'll be taken to a full word-processor with bold, italic, headings, lists, colors and more.
+                  </p>
+                </div>
+              </div>
+            )}
+
+            {/* Title */}
             <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Title</label>
+              <label className="text-xs font-semibold text-gray-600 mb-1 block">
+                {newType === "notes" ? "Note Title" : "Title"}
+              </label>
               <Input
                 value={newTitle}
                 onChange={(e) => setNewTitle(e.target.value)}
-                placeholder="e.g. Lecture Notes Week 3"
+                placeholder={newType === "notes" ? "e.g. Week 3 — Design Patterns" : "e.g. Lecture Notes Week 3"}
                 className="text-sm"
               />
             </div>
-            <div>
-              <label className="text-xs font-semibold text-gray-600 mb-1 block">Subtitle (optional)</label>
-              <Input
-                value={newSubtitle}
-                onChange={(e) => setNewSubtitle(e.target.value)}
-                placeholder="e.g. PDF, Due: 20 Feb 2026"
-                className="text-sm"
-              />
-            </div>
+
+            {/* Subtitle — hide for notes */}
+            {newType !== "notes" && (
+              <div>
+                <label className="text-xs font-semibold text-gray-600 mb-1 block">Subtitle (optional)</label>
+                <Input
+                  value={newSubtitle}
+                  onChange={(e) => setNewSubtitle(e.target.value)}
+                  placeholder="e.g. PDF, Due: 20 Feb 2026"
+                  className="text-sm"
+                />
+              </div>
+            )}
+
             <div className="flex gap-2 pt-1">
               <Button variant="outline" className="flex-1" onClick={() => setAddDialog(false)}>Cancel</Button>
-              <Button className="flex-1 bg-[#1a2a5e] hover:bg-[#132047] text-white" onClick={addMaterial}>
-                Add Material
+              <Button
+                className={`flex-1 text-white font-bold ${
+                  newType === "notes"
+                    ? "bg-indigo-600 hover:bg-indigo-700"
+                    : "bg-[#1a2a5e] hover:bg-[#132047]"
+                }`}
+                onClick={addMaterial}
+              >
+                {newType === "notes" ? "Open Notes Editor →" : "Add Material"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Add Section Dialog */}
+      {/* ── Add Section Dialog ──────────────────── */}
       <Dialog open={sectionDialog} onOpenChange={setSectionDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

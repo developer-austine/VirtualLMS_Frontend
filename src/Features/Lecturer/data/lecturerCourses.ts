@@ -18,7 +18,7 @@ export interface CourseSection {
 
 export interface CourseMaterial {
   id: string;
-  type: "file" | "video" | "quiz" | "assignment" | "link" | "announcement";
+  type: "file" | "video" | "quiz" | "assignment" | "link" | "announcement" | "notes";
   title: string;
   subtitle?: string;
   uploadedAt: string;

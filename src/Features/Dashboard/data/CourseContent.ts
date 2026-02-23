@@ -1,6 +1,6 @@
 export interface CourseActivity {
   id: string;
-  type: "announcement" | "link" | "video" | "file" | "quiz";
+  type: "announcement" | "link" | "video" | "file" | "quiz" | "notes";
   title: string;
   subtitle?: string;
   status?: "done" | "ended" | "open";
