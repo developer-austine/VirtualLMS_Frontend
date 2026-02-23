@@ -1,22 +1,14 @@
 import { useState } from "react";
-import { ChevronDown, Menu, X, Bell, MessageSquare, LogOut, User } from "lucide-react";
-import { Link, useNavigate } from "react-router-dom";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { useAuth } from "@/context/authContext";
-
-const guestLinks = [{ label: "Home", href: "/" }];
+import { ChevronDown, Menu, X } from "lucide-react";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "../context/authContext";
 
 const studentLinks = [
-  { label: "Home", href: "/" },
   { label: "Dashboard", href: "/dashboard" },
   { label: "My Courses", href: "/my-courses" },
 ];
+
+const guestLinks: typeof studentLinks = [];
 
 const eLibraryItems = [
   { label: "MyLoft", href: "#" },
@@ -29,26 +21,23 @@ const eLibraryItems = [
 ];
 
 const Navbar = () => {
-  const { user, isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
+  const { isAuthenticated } = useAuth();
+  const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [eLibOpen, setELibOpen] = useState(false);
 
   const navLinks = isAuthenticated ? studentLinks : guestLinks;
 
-  const handleLogout = () => {
-    logout();
-    navigate("/");
-  };
+  const isActive = (href: string) =>
+    location.pathname === href || location.pathname.startsWith(href + "/");
 
   return (
-    // ✅ sticky top-0 z-50 — stays fixed on scroll
     <nav className="sticky top-0 z-50 bg-[#c9a227] shadow-md">
       <div className="w-full px-6 py-3 flex items-center justify-between">
 
         {/* Logo + Brand */}
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-[#1a2a5e]">
+          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-[#1a2a5e]">
             <img
               src="/assets/logo.png"
               alt="KCAU Logo"
@@ -72,7 +61,11 @@ const Navbar = () => {
             <Link
               key={link.label}
               to={link.href}
-              className="px-4 py-2 rounded-sm font-semibold text-sm text-white bg-[#1a2a5e] hover:bg-[#132047] transition-colors duration-200"
+              className={`px-4 py-2 rounded-sm font-semibold text-sm transition-colors duration-200 ${
+                isActive(link.href)
+                  ? "bg-white text-[#1a2a5e]"           // ✅ active = white bg, navy text
+                  : "text-white hover:bg-white/20"       // inactive = white text
+              }`}
             >
               {link.label}
             </Link>
@@ -84,7 +77,7 @@ const Navbar = () => {
             onMouseEnter={() => setELibOpen(true)}
             onMouseLeave={() => setELibOpen(false)}
           >
-            <button className="flex items-center gap-1 px-4 py-2 rounded-sm font-semibold text-sm text-white bg-[#1a2a5e] hover:bg-[#132047] transition-colors duration-200">
+            <button className={`flex items-center gap-1 px-4 py-2 rounded-sm font-semibold text-sm transition-colors duration-200 text-white hover:bg-white/20`}>
               E-Library
               <ChevronDown size={14} className={`transition-transform duration-200 ${eLibOpen ? "rotate-180" : ""}`} />
             </button>
@@ -100,53 +93,11 @@ const Navbar = () => {
               ))}
             </div>
           </div>
-
-          {/* Auth icons */}
-          {isAuthenticated && (
-            <div className="flex items-center gap-2 ml-3 pl-3 border-l border-[#1a2a5e]/30">
-              <button className="relative w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#1a2a5e]/10 transition-colors text-[#1a2a5e]">
-                <Bell size={18} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
-              </button>
-              <button className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-[#1a2a5e]/10 transition-colors text-[#1a2a5e]">
-                <MessageSquare size={18} />
-              </button>
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button className="flex items-center gap-1.5 ml-1">
-                    <div className="w-9 h-9 rounded-full bg-[#1a2a5e] text-white flex items-center justify-center font-black text-sm">
-                      {user?.avatar ?? "U"}
-                    </div>
-                    <ChevronDown size={14} className="text-[#1a2a5e]" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-48">
-                  <div className="px-3 py-2">
-                    <p className="font-bold text-sm text-[#1a2a5e]">{user?.name}</p>
-                    <p className="text-xs text-gray-400">{user?.email}</p>
-                  </div>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem asChild>
-                    <Link to="/dashboard" className="flex items-center gap-2">
-                      <User size={14} /> Dashboard
-                    </Link>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    onClick={handleLogout}
-                    className="text-red-600 focus:text-red-600 flex items-center gap-2"
-                  >
-                    <LogOut size={14} /> Log out
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          )}
         </div>
 
         {/* Mobile toggle */}
         <button
-          className="md:hidden text-white bg-[#1a2a5e] p-2 rounded"
+          className="md:hidden text-[#1a2a5e] bg-white/30 p-2 rounded"
           onClick={() => setMobileOpen(!mobileOpen)}
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
@@ -160,7 +111,9 @@ const Navbar = () => {
             <Link
               key={link.label}
               to={link.href}
-              className="block py-2.5 text-white font-semibold border-b border-white/10 hover:text-[#c9a227] transition-colors"
+              className={`block py-2.5 font-semibold border-b border-white/10 transition-colors ${
+                isActive(link.href) ? "text-[#c9a227]" : "text-white hover:text-[#c9a227]"
+              }`}
               onClick={() => setMobileOpen(false)}
             >
               {link.label}
@@ -177,11 +130,6 @@ const Navbar = () => {
               {item.label}
             </Link>
           ))}
-          {isAuthenticated && (
-            <button onClick={handleLogout} className="block py-2.5 text-red-400 font-semibold w-full text-left">
-              Log out
-            </button>
-          )}
         </div>
       )}
     </nav>
