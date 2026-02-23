@@ -19,24 +19,24 @@ interface TempUser {
 
 const TEMP_USERS: TempUser[] = [
   {
-    email: "student@kcau.ac.ke",
+    email: "student@skylimit.ac.ke",
     password: "password123",
     user: {
       id: "s1",
       name: "Austine Alex",
-      email: "student@kcau.ac.ke",
+      email: "student@skylimit.ac.ke",
       role: "student",
       avatar: "AA",
       regNumber: "SKL/2021/001",
     },
   },
   {
-    email: "lecturer@kcau.ac.ke",
+    email: "lecturer@skylimit.ac.ke",
     password: "lecturer123",
     user: {
       id: "l1",
       name: "Jared Maranga",
-      email: "lecturer@kcau.ac.ke",
+      email: "lecturer@skylimit.ac.ke",
       role: "lecturer",
       avatar: "JM",
       staffId: "STAFF/2018/042",
@@ -44,12 +44,12 @@ const TEMP_USERS: TempUser[] = [
     },
   },
   {
-    email: "admin@kcau.ac.ke",
+    email: "admin@skylimit.ac.ke",
     password: "admin123",
     user: {
       id: "a1",
       name: "Admin User",
-      email: "admin@kcau.ac.ke",
+      email: "admin@skylimit.ac.ke",
       role: "admin",
       avatar: "AD",
       staffId: "ADMIN/2015/001",
@@ -71,14 +71,14 @@ export const login = async (
 
 // ── Session helpers ────────────────────────────────
 export const saveSession = (user: AuthUser) =>
-  sessionStorage.setItem("kcau_user", JSON.stringify(user));
+  sessionStorage.setItem("skylimit_user", JSON.stringify(user));
 
 export const loadSession = (): AuthUser | null => {
-  const raw = sessionStorage.getItem("kcau_user");
+  const raw = sessionStorage.getItem("skylimit_user");
   return raw ? (JSON.parse(raw) as AuthUser) : null;
 };
 
-export const clearSession = () => sessionStorage.removeItem("kcau_user");
+export const clearSession = () => sessionStorage.removeItem("skylimit_user");
 
 /*
  * const res = await fetch('/api/auth/login', {

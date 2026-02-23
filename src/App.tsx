@@ -20,6 +20,7 @@ import StudentList from "./Features/Lecturer/StudentList";
 import Grades from "./Features/Lecturer/Grades";
 import ScheduleClass from "./Features/Lecturer/ScheduleClass";
 import Announcements from "./Features/Lecturer/Announcements";
+import NotesEditor from "./Features/Lecturer/NotesEditor";
 
 function App() {
   return (
@@ -43,6 +44,7 @@ function App() {
             <Route path="/lecturer/course/:id"                   element={<LecturerCourseDetail />} />
             <Route path="/lecturer/course/:id/students"          element={<StudentList />} />
             <Route path="/lecturer/course/:id/grades"            element={<Grades />} />
+            <Route path="/lecturer/course/:id/notes/:noteId"     element={<NotesEditor />} />
             <Route path="/lecturer/schedule"                     element={<ScheduleClass />} />
             <Route path="/lecturer/announcements"                element={<Announcements />} />
           </Routes>

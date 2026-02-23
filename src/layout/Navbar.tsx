@@ -43,12 +43,12 @@ const Navbar = () => {
         {/* Logo */}
         <Link to="/" className="flex items-center gap-3">
           <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 border-[#1a2a5e]">
-            <img src="/assets/logo.png" alt="KCAU Logo" className="w-full h-full object-contain"
+            <img src="/assets/logo.png" alt="skylimit Logo" className="w-full h-full object-contain"
               onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
           </div>
           <div className="flex flex-col">
-            <span className="text-[#1a2a5e] font-black text-xl tracking-tight leading-tight">KCAU Virtual Campus</span>
-            <span className="text-[#1a2a5e]/70 text-xs font-medium tracking-widest uppercase">KCA University</span>
+            <span className="text-[#1a2a5e] font-black text-xl tracking-tight leading-tight">skylimit Virtual Campus</span>
+            <span className="text-[#1a2a5e]/70 text-xs font-medium tracking-widest uppercase">SKYLIMIT COLLEGE</span>
           </div>
         </Link>
 

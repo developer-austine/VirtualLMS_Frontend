@@ -10,21 +10,24 @@ import {
   HelpCircle,
   ArrowLeft,
   CheckCircle2,
+  NotebookPen,
 } from "lucide-react";
 import { courses } from "./data/courses";
 import { courseContents } from "./data/CourseContent";
+import InlineNotesViewer from "../Lecturer/InlineNotesViewer";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
 const tabs = ["Course", "Participants", "Grades", "Activities", "Competencies"];
 
 const activityIcon = (type: string) => {
   switch (type) {
-    case "announcement": return <Megaphone size={16} className="text-[#c9a227]" />;
-    case "link":         return <Link2 size={16} className="text-blue-500" />;
-    case "video":        return <Video size={16} className="text-red-500" />;
-    case "file":         return <FileText size={16} className="text-orange-400" />;
-    case "quiz":         return <HelpCircle size={16} className="text-purple-500" />;
-    default:             return <FileText size={16} className="text-gray-400" />;
+    case "announcement": return <Megaphone    size={16} className="text-[#c9a227]"  />;
+    case "link":         return <Link2        size={16} className="text-blue-500"   />;
+    case "video":        return <Video        size={16} className="text-red-500"    />;
+    case "file":         return <FileText     size={16} className="text-orange-400" />;
+    case "quiz":         return <HelpCircle   size={16} className="text-purple-500" />;
+    case "notes":        return <NotebookPen  size={16} className="text-indigo-500" />;
+    default:             return <FileText     size={16} className="text-gray-400"   />;
   }
 };
 
@@ -33,6 +36,10 @@ const CourseDetail = () => {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("Course");
   const [collapsedSections, setCollapsedSections] = useState<Set<string>>(new Set());
+  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
+
+  const toggleNote = (actId: string) =>
+    setExpandedNotes((p) => { const n = new Set(p); n.has(actId) ? n.delete(actId) : n.add(actId); return n; });
 
   const course = courses.find((c) => c.id === id);
   const content = courseContents.find((c) => c.courseId === id);
@@ -163,29 +170,47 @@ const CourseDetail = () => {
                         {!isCollapsed && (
                           <div className="divide-y divide-gray-100">
                             {section.activities.map((activity) => (
-                              <div
-                                key={activity.id}
-                                onClick={() => handleActivityClick(activity.type, activity.id)}
-                                className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer group"
-                              >
-                                <div className="flex items-start gap-3">
-                                  <div className="mt-0.5">{activityIcon(activity.type)}</div>
-                                  <div>
-                                    <p className="text-sm font-medium text-[#c9a227] group-hover:underline">
-                                      {activity.title}
-                                      {activity.subtitle && activity.type === "file" && (
-                                        <span className="text-gray-400 font-normal ml-1">{activity.subtitle}</span>
+                              <div key={activity.id}>
+                                <div
+                                  onClick={() =>
+                                    activity.type === "notes"
+                                      ? toggleNote(activity.id)
+                                      : handleActivityClick(activity.type, activity.id)
+                                  }
+                                  className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer group"
+                                >
+                                  <div className="flex items-start gap-3">
+                                    <div className="mt-0.5">{activityIcon(activity.type)}</div>
+                                    <div>
+                                      <p className="text-sm font-medium text-[#c9a227] group-hover:underline">
+                                        {activity.title}
+                                        {activity.subtitle && activity.type === "file" && (
+                                          <span className="text-gray-400 font-normal ml-1">{activity.subtitle}</span>
+                                        )}
+                                        {activity.type === "notes" && (
+                                          <span className="ml-2 text-[10px] text-indigo-400">
+                                            {expandedNotes.has(activity.id) ? "▲ collapse" : "▼ read notes"}
+                                          </span>
+                                        )}
+                                      </p>
+                                      {activity.subtitle && activity.type !== "file" && (
+                                        <p className="text-xs text-gray-400 mt-0.5">{activity.subtitle}</p>
                                       )}
-                                    </p>
-                                    {activity.subtitle && activity.type !== "file" && (
-                                      <p className="text-xs text-gray-400 mt-0.5">{activity.subtitle}</p>
-                                    )}
+                                    </div>
                                   </div>
+                                  {activity.status === "done" && (
+                                    <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-1 rounded border border-gray-300">
+                                      <CheckCircle2 size={12} className="text-green-500" /> Done
+                                    </span>
+                                  )}
                                 </div>
-                                {activity.status === "done" && (
-                                  <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-1 rounded border border-gray-300">
-                                    <CheckCircle2 size={12} className="text-green-500" /> Done
-                                  </span>
+
+                                {/* Inline notes viewer for students */}
+                                {activity.type === "notes" && expandedNotes.has(activity.id) && (
+                                  <InlineNotesViewer
+                                    materialId={activity.id}
+                                    isLecturer={false}
+                                  />
                                 )}
                               </div>
                             ))}

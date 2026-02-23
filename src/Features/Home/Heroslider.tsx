@@ -9,17 +9,17 @@ const slides = [
   {
     id: 1,
     image: schoolOfBusiness,
-    alt: "School of Business - KCAU Virtual Campus",
+    alt: "School of Business - skylimit Virtual Campus",
   },
   {
     id: 2,
     image: schoolOfTechnology,
-    alt: "School of Technology - KCAU Virtual Campus",
+    alt: "School of Technology - skylimit Virtual Campus",
   },
   {
     id: 3,
     image: schoolOfArts,
-    alt: "School of Arts - KCAU Virtual Campus",
+    alt: "School of Arts - skylimit Virtual Campus",
   },
 ];
 

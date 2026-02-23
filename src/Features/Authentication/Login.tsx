@@ -5,8 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/authContext";
-
+import { useAuth } from "../../context/authContext";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
 const Login = () => {
@@ -19,15 +18,22 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const result = login(email, password);
+    const result = await login(email, password);
 
     if (result.success) {
-      navigate("/dashboard");
+      // Role-based redirect
+      if (email.startsWith("lecturer")) {
+        navigate("/lecturer/dashboard");
+      } else if (email.startsWith("admin")) {
+        navigate("/admin/dashboard");
+      } else {
+        navigate("/dashboard");
+      }
     } else {
       setError(result.error ?? "Login failed.");
       setLoading(false);
@@ -44,7 +50,6 @@ const Login = () => {
 
       <div className="relative z-10 flex items-center justify-center w-full h-full px-4">
         <Card className="w-full max-w-sm shadow-2xl border-0 rounded-xl overflow-hidden">
-
           <div className="h-1.5 w-full bg-[#c9a227]" />
 
           <CardHeader className="pb-2 pt-5 px-6">
@@ -54,7 +59,6 @@ const Login = () => {
           </CardHeader>
 
           <CardContent className="px-6 pb-6 pt-1">
-            {/* Error message */}
             {error && (
               <div className="mb-3 px-3 py-2 rounded-md bg-red-50 border border-red-200 text-red-600 text-xs font-medium">
                 {error}
@@ -62,7 +66,6 @@ const Login = () => {
             )}
 
             <form onSubmit={handleLogin} className="flex flex-col gap-3">
-              {/* Email */}
               <div className="space-y-1">
                 <Label htmlFor="email" className="text-sm font-semibold text-gray-700">
                   Email Address
@@ -78,7 +81,6 @@ const Login = () => {
                 />
               </div>
 
-              {/* Password */}
               <div className="space-y-1">
                 <Label htmlFor="password" className="text-sm font-semibold text-gray-700">
                   Password
@@ -103,14 +105,12 @@ const Login = () => {
                 </div>
               </div>
 
-              {/* Forgot */}
               <div className="flex justify-end">
                 <a href="/forgot-password" className="text-xs text-[#c9a227] font-semibold hover:underline">
                   Forgot password?
                 </a>
               </div>
 
-              {/* Submit */}
               <Button
                 type="submit"
                 disabled={loading}
