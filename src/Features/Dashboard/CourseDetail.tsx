@@ -12,7 +12,7 @@ import {
   CheckCircle2,
 } from "lucide-react";
 import { courses } from "./data/courses";
-import { courseContents } from "./data/courseContent";
+import { courseContents } from "./data/CourseContent";
 import schoolOfBusiness from "../../assets/school-of-business.png";
 
 const tabs = ["Course", "Participants", "Grades", "Activities", "Competencies"];
@@ -61,6 +61,30 @@ const CourseDetail = () => {
   const collapseAll = () => setCollapsedSections(new Set(content.sections.map((s) => s.id)));
   const expandAll = () => setCollapsedSections(new Set());
   const allCollapsed = collapsedSections.size === content.sections.length;
+
+  // Handle activity click — route based on type
+  const handleActivityClick = (type: string, activityId: string) => {
+    switch (type) {
+      case "quiz":
+        navigate(`/course/${id}/quiz/${activityId}`);
+        break;
+      case "video":
+        navigate(`/course/${id}/class/${activityId}`);
+        break;
+      case "file":
+        navigate(`/course/${id}/file/${activityId}`);
+        break;
+      case "link":
+        // external links open in new tab
+        window.open("https://chat.whatsapp.com", "_blank");
+        break;
+      case "announcement":
+        navigate(`/course/${id}/announcement/${activityId}`);
+        break;
+      default:
+        break;
+    }
+  };
 
   return (
     <div
@@ -141,6 +165,7 @@ const CourseDetail = () => {
                             {section.activities.map((activity) => (
                               <div
                                 key={activity.id}
+                                onClick={() => handleActivityClick(activity.type, activity.id)}
                                 className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer group"
                               >
                                 <div className="flex items-start gap-3">

@@ -52,7 +52,7 @@ export const courseContents: CourseContent[] = [
         id: "g4",
         title: "Lecture 3: Design Patterns",
         activities: [
-          { id: "a7", type: "quiz", title: "Quiz 1", subtitle: "Opened: Thursday, 12 February 2026, 4:50 PM", status: "open" },
+          { id: "q2", type: "quiz", title: "Quiz 1", subtitle: "Opened: Thursday, 12 February 2026, 4:50 PM", status: "open" }, // ✅ was a7
           { id: "a8", type: "file", title: "Design Patterns", subtitle: "PDF" },
         ],
       },
@@ -120,7 +120,7 @@ export const courseContents: CourseContent[] = [
         id: "g4",
         title: "Lecture 3: Game Components and Mechanics",
         activities: [
-          { id: "a7", type: "quiz", title: "quiz 1", subtitle: "Opened: Thursday, 12 February 2026, 4:50 PM", status: "open" },
+          { id: "q1", type: "quiz", title: "quiz 1", subtitle: "Opened: Thursday, 12 February 2026, 4:50 PM", status: "open" }, // ✅ was a7
           { id: "a8", type: "file", title: "Components", subtitle: "PDF" },
         ],
       },
