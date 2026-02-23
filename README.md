@@ -1,6 +1,6 @@
-# KCAU Virtual Campus — LMS Frontend
+# SKYLIMIT  Virtual Campus — LMS Frontend
 
-A modern, responsive Learning Management System (LMS) frontend for KCA University, built with React, TypeScript, Tailwind CSS and Shadcn UI. Mirrors the real KCAU Virtual Campus (virtualcampus.kcau.ac.ke) with a clean, role-based interface for students and lecturers.
+A modern, responsive Learning Management System (LMS) frontend for KCA University, built with React, TypeScript, Tailwind CSS and Shadcn UI. Mirrors the real SKYLIMIT  Virtual Campus (virtualcampus.SKYLIMIT .ac.ke) with a clean, role-based interface for students and lecturers.
 
 ---
 
@@ -87,9 +87,9 @@ Login is at `/login`. Role detection happens automatically on submit and redirec
 
 | Role | Email | Password | Redirects to |
 |---|---|---|---|
-| Student | `student@kcau.ac.ke` | `password123` | `/dashboard` |
-| Lecturer | `lecturer@kcau.ac.ke` | `lecturer123` | `/lecturer/dashboard` |
-| Admin | `admin@kcau.ac.ke` | `admin123` | `/admin/dashboard` |
+| Student | `student@SKYLIMIT .ac.ke` | `password123` | `/dashboard` |
+| Lecturer | `lecturer@SKYLIMIT .ac.ke` | `lecturer123` | `/lecturer/dashboard` |
+| Admin | `admin@SKYLIMIT .ac.ke` | `admin123` | `/admin/dashboard` |
 
 > Session is persisted in `sessionStorage` so it survives page refresh but clears on tab close.
 

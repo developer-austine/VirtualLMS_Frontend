@@ -240,7 +240,7 @@ const NotesEditor = () => {
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-gray-300">KCAU Virtual Campus · Lecturer Notes</span>
+            <span className="text-[10px] text-gray-300">SKYLIMIT  Virtual Campus · Lecturer Notes</span>
           </div>
         </div>
       </div>

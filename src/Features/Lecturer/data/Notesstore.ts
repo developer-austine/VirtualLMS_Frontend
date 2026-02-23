@@ -6,7 +6,7 @@ export interface SavedNote {
   published: boolean;
 }
 
-const key = (materialId: string) => `kcau_note_${materialId}`;
+const key = (materialId: string) => `SKYLIMIT _note_${materialId}`;
 
 export const notesStore = {
   save: (note: SavedNote): void => {

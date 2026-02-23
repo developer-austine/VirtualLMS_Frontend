@@ -44,7 +44,7 @@ const Login = () => {
     <div className="relative w-full overflow-hidden" style={{ height: "480px" }}>
       <img
         src={schoolOfBusiness}
-        alt="KCAU Virtual Campus"
+        alt="SKYLIMIT  Virtual Campus"
         className="absolute inset-0 w-full h-full object-cover object-center"
       />
 
@@ -54,7 +54,7 @@ const Login = () => {
 
           <CardHeader className="pb-2 pt-5 px-6">
             <CardTitle className="text-lg font-black text-[#1a2a5e] tracking-tight">
-              Log in to KCAU LMS
+              Log in to SKYLIMIT  LMS
             </CardTitle>
           </CardHeader>
 
@@ -73,7 +73,7 @@ const Login = () => {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@kcau.ac.ke"
+                  placeholder="you@SKYLIMIT .ac.ke"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
