@@ -1,14 +1,7 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import DashboardHome from "./DashboardHome";
 
 const Dashboard = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    navigate("/my-courses", { replace: true });
-  }, [navigate]);
-
-  return null;
+  return <DashboardHome />;
 };
 
 export default Dashboard;
