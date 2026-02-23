@@ -1,50 +1,51 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
-import { login as authLogin, type User } from "../lib/auth";
+import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { type AuthUser, login as authLogin, saveSession, loadSession, clearSession } from "../lib/auth";
 
 interface AuthContextType {
-  user: User | null;
+  user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => { success: boolean; error?: string };
+  role: AuthUser["role"] | null;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    try {
-      const saved = sessionStorage.getItem("kcau_user");
-      return saved ? JSON.parse(saved) : null;
-    } catch {
-      sessionStorage.removeItem("kcau_user");
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(loadSession);
 
-  const login = (email: string, password: string) => {
-    const result = authLogin(email, password);
+  const login = async (email: string, password: string) => {
+    const result = await authLogin(email, password);
     if (result.success && result.user) {
       setUser(result.user);
-      sessionStorage.setItem("kcau_user", JSON.stringify(result.user));
+      saveSession(result.user);
+      return { success: true };
     }
-    return { success: result.success, error: result.error };
+    return { success: false, error: result.error };
   };
 
   const logout = () => {
     setUser(null);
-    sessionStorage.removeItem("kcau_user");
+    clearSession();
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        isAuthenticated: !!user,
+        role: user?.role ?? null,
+        login,
+        logout,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );
 };
 
-// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => {
   const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used inside AuthProvider");
+  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 };
