@@ -11,6 +11,9 @@ import {
   ArrowLeft,
   CheckCircle2,
   NotebookPen,
+  ClipboardList,
+  AlertTriangle,
+  Upload,
 } from "lucide-react";
 import { courses } from "./data/courses";
 import { courseContents } from "./data/CourseContent";
@@ -26,7 +29,8 @@ const activityIcon = (type: string) => {
     case "video":        return <Video        size={16} className="text-red-500"    />;
     case "file":         return <FileText     size={16} className="text-orange-400" />;
     case "quiz":         return <HelpCircle   size={16} className="text-purple-500" />;
-    case "notes":        return <NotebookPen  size={16} className="text-indigo-500" />;
+    case "assignment":   return <Upload        size={16} className="text-pink-500"    />;
+    case "notes":        return <NotebookPen   size={16} className="text-indigo-500" />;
     default:             return <FileText     size={16} className="text-gray-400"   />;
   }
 };
@@ -70,10 +74,13 @@ const CourseDetail = () => {
   const allCollapsed = collapsedSections.size === content.sections.length;
 
   // Handle activity click — route based on type
-  const handleActivityClick = (type: string, activityId: string) => {
+  const handleActivityClick = (type: string, activityId: string, assignmentId?: string) => {
     switch (type) {
       case "quiz":
         navigate(`/course/${id}/quiz/${activityId}`);
+        break;
+      case "assignment":
+        navigate(`/assignment/${assignmentId ?? activityId}`);
         break;
       case "video":
         navigate(`/course/${id}/class/${activityId}`);
@@ -82,7 +89,6 @@ const CourseDetail = () => {
         navigate(`/course/${id}/file/${activityId}`);
         break;
       case "link":
-        // external links open in new tab
         window.open("https://chat.whatsapp.com", "_blank");
         break;
       case "announcement":
@@ -175,7 +181,7 @@ const CourseDetail = () => {
                                   onClick={() =>
                                     activity.type === "notes"
                                       ? toggleNote(activity.id)
-                                      : handleActivityClick(activity.type, activity.id)
+                                      : handleActivityClick(activity.type, activity.id, activity.assignmentId)
                                   }
                                   className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 transition-colors cursor-pointer group"
                                 >
@@ -199,8 +205,23 @@ const CourseDetail = () => {
                                     </div>
                                   </div>
                                   {activity.status === "done" && (
-                                    <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-1 rounded border border-gray-300">
+                                    <span className="flex items-center gap-1 text-xs bg-gray-100 text-gray-600 font-semibold px-2 py-1 rounded border border-gray-300 flex-shrink-0">
                                       <CheckCircle2 size={12} className="text-green-500" /> Done
+                                    </span>
+                                  )}
+                                  {activity.status === "todo" && (
+                                    <span className="flex items-center gap-1 text-xs bg-amber-50 text-amber-700 font-semibold px-2 py-1 rounded border border-amber-200 flex-shrink-0">
+                                      <ClipboardList size={12} /> To do
+                                    </span>
+                                  )}
+                                  {activity.status === "overdue" && (
+                                    <span className="flex items-center gap-1 text-xs bg-red-50 text-red-600 font-semibold px-2 py-1 rounded border border-red-200 flex-shrink-0">
+                                      <AlertTriangle size={12} /> Overdue
+                                    </span>
+                                  )}
+                                  {activity.status === "open" && (
+                                    <span className="flex items-center gap-1 text-xs bg-green-50 text-green-700 font-semibold px-2 py-1 rounded border border-green-200 flex-shrink-0">
+                                      <CheckCircle2 size={12} /> Open
                                     </span>
                                   )}
                                 </div>

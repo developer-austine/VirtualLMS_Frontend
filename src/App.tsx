@@ -11,6 +11,7 @@ import Dashboard from "./Features/Dashboard/Dashboard";
 import MyCourses from "./Features/Dashboard/MyCourses";
 import CourseDetail from "./Features/Dashboard/CourseDetail";
 import QuizPage from "./Features/Dashboard/QuizPage";
+import AssignmentDetail from "./Features/Dashboard/AssignmentDetail";
 
 // Lecturer
 import LecturerDashboard from "./Features/Lecturer/LecturerDashboard";
@@ -36,7 +37,8 @@ function App() {
             <Route path="/dashboard"               element={<Dashboard />} />
             <Route path="/my-courses"              element={<MyCourses />} />
             <Route path="/course/:id"              element={<CourseDetail />} />
-            <Route path="/course/:id/quiz/:quizId" element={<QuizPage />} />
+            <Route path="/course/:id/quiz/:quizId"       element={<QuizPage />} />
+            <Route path="/assignment/:assignmentId" element={<AssignmentDetail />} />
 
             {/* ── Lecturer ── */}
             <Route path="/lecturer/dashboard"                    element={<LecturerDashboard />} />

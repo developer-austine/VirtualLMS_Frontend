@@ -1,9 +1,10 @@
 export interface CourseActivity {
   id: string;
-  type: "announcement" | "link" | "video" | "file" | "quiz" | "notes";
+  type: "announcement" | "link" | "video" | "file" | "quiz" | "notes" | "assignment";
+  assignmentId?: string;
   title: string;
   subtitle?: string;
-  status?: "done" | "ended" | "open";
+  status?: "done" | "ended" | "open" | "todo" | "overdue";
   statusLabel?: string;
 }
 
@@ -46,6 +47,7 @@ export const courseContents: CourseContent[] = [
         title: "Lecture 2: Advanced Concepts",
         activities: [
           { id: "a6", type: "file", title: "Advanced Java Notes", subtitle: "PPT" },
+          { id: "asn1", type: "assignment", title: "Assignment 1", subtitle: "Opened: Sun 1 Feb 2026  Due: Sun 8 Feb 2026", status: "todo", assignmentId: "asn1" },
         ],
       },
       {
@@ -84,6 +86,7 @@ export const courseContents: CourseContent[] = [
         title: "Lecture 2: Network Protocols",
         activities: [
           { id: "a6", type: "file", title: "Network Protocols Notes", subtitle: "PPT" },
+          { id: "asn2", type: "assignment", title: "Assignment 1", subtitle: "Opened: Sun 1 Feb 2026  Due: Sun 8 Feb 2026", status: "overdue", assignmentId: "asn2" },
         ],
       },
     ],
@@ -186,6 +189,20 @@ export const courseContents: CourseContent[] = [
         activities: [
           { id: "a3", type: "file", title: "LP Fundamentals", subtitle: "PPT" },
           { id: "a4", type: "quiz", title: "Quiz 1", subtitle: "Opened: Thursday, 12 February 2026, 4:50 PM", status: "open" },
+        ],
+      },
+      {
+        id: "g3",
+        title: "New section",
+        activities: [
+          {
+            id: "mat-asn1",
+            type: "assignment",
+            title: "ASSIGNMENT ONE",
+            subtitle: "Opened: Sunday, 1 February 2026, 12:00 AM   Due: Sunday, 8 February 2026, 12:00 AM",
+            status: "overdue",
+            assignmentId: "mat-asn1",
+          },
         ],
       },
     ],

@@ -115,6 +115,10 @@ const LecturerCourseDetail = () => {
     setNewSectionTitle(""); setSectionDialog(false);
   };
 
+  const removeSection = (sectionId: string) => {
+    setSections((prev) => prev.filter((s) => s.id !== sectionId));
+  };
+
   const toggleNotes = (matId: string) =>
     setExpandedNotes((p) => {
       const n = new Set(p);
@@ -190,12 +194,21 @@ const LecturerCourseDetail = () => {
                       <span className="font-bold text-sm text-[#1a2a5e]">{section.title}</span>
                       <span className="text-xs text-gray-400">({section.materials.length})</span>
                     </button>
-                    <button
-                      onClick={() => { setTargetSection(section.id); setAddDialog(true); }}
-                      className="flex items-center gap-1 text-xs text-[#c9a227] font-semibold hover:underline"
-                    >
-                      <Plus size={12} /> Add material
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => { setTargetSection(section.id); setAddDialog(true); }}
+                        className="flex items-center gap-1 text-xs text-[#c9a227] font-semibold hover:underline"
+                      >
+                        <Plus size={12} /> Add material
+                      </button>
+                      <div className="w-px h-4 bg-gray-200" />
+                      <button
+                        onClick={() => removeSection(section.id)}
+                        className="flex items-center gap-1 text-xs text-red-400 font-semibold hover:text-red-600 hover:underline"
+                      >
+                        <Trash2 size={12} /> Remove section
+                      </button>
+                    </div>
                   </div>
 
                   {/* Materials list */}
