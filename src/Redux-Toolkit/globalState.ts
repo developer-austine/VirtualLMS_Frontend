@@ -7,11 +7,13 @@ import enrollmentReducer from "./features/Enrollment/enrollmentSlice"
 import notesReducer from "./features/Notes/noteSlice"
 import attendanceReducer from "./features/Attendance/attendanceSlice"
 import branchReducer from "./features/Branch/branchSlice"
+import adminReducer from "./features/Admin/adminSlice"
 
 const globalState = configureStore({
     reducer: {
         auth: authReducer,
         user: userReducer,
+        admin: adminReducer,
         course: courseReducer,
         subUnit: subUnitReducer,
         enrollment: enrollmentReducer,
