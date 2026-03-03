@@ -1,21 +1,26 @@
-import { createSlice } from "@reduxjs/toolkit"
-import { getAllLecturers, getAllStudents, getUserById, getUserProfile, logout } from "./userThunk"
+import { createSlice } from "@reduxjs/toolkit";
+import { getUserProfile, getUserById, logout } from "./userThunk";
+
+interface UserDto {
+    id: number;
+    fullName: string;
+    email: string;
+    phone: string;
+    role: string;
+    createdAt: string;
+    updatedAt: string;
+    lastLogin: string;
+}
 
 interface UserState {
-    userProfile: object | null;
-    users: object[];
-    students: object[];
-    lecturers: object[];
-    selectedUser: object | null;
+    userProfile: UserDto | null;
+    selectedUser: UserDto | null;
     loading: boolean;
     error: string | null;
 }
 
 const initialState: UserState = {
     userProfile: null,
-    users: [],
-    students: [],
-    lecturers: [],
     selectedUser: null,
     loading: false,
     error: null,
@@ -28,9 +33,6 @@ const userSlice = createSlice({
         clearUserState: (state) => {
             state.userProfile = null;
             state.selectedUser = null;
-            state.users = [];
-            state.students = [];
-            state.lecturers = [];
             state.error = null;
         }
     },
@@ -49,15 +51,20 @@ const userSlice = createSlice({
                 state.loading = false;
                 state.error = action.payload as string;
             })
-            .addCase(getAllStudents.fulfilled, (state, action) => {
-                state.students = action.payload;
-            })
-            .addCase(getAllLecturers.fulfilled, (state, action) => {
-                state.lecturers = action.payload;
+
+            .addCase(getUserById.pending, (state) => {
+                state.loading = true;
+                state.error = null;
             })
             .addCase(getUserById.fulfilled, (state, action) => {
+                state.loading = false;
                 state.selectedUser = action.payload;
             })
+            .addCase(getUserById.rejected, (state, action) => {
+                state.loading = false;
+                state.error = action.payload as string;
+            })
+
             .addCase(logout.fulfilled, () => initialState)
     }
 })
