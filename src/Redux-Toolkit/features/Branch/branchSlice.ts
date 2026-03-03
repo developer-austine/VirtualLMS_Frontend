@@ -55,6 +55,7 @@ const branchSlice = createSlice({
         clearBranchState: (state) => {
             state.branches = [];
             state.selectedBranch = null;
+            state.loading = false;
             state.error = null;
         },
         clearBranchError: (state) => {
