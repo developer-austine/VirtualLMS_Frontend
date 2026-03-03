@@ -58,10 +58,14 @@ export const getAllLecturers = createAsyncThunk(
 
 export const getUserById = createAsyncThunk(
     "user/getById",
-    async (userId: string, { rejectWithValue }) => {
+    async (
+        { userId, token }: { userId: string; token: string },
+        { rejectWithValue }
+    ) => {
+        if (!token) return rejectWithValue("Missing auth token");
         try {
             const res = await api.get(`/api/users/${userId}`, {
-                headers: { Authorization: `Bearer ${localStorage.getItem('jwt')}` }
+                headers: { Authorization: `Bearer ${token}` }
             });
             console.log("get user by Id success", res.data);
             return res.data;
