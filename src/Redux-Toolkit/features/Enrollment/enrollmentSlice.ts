@@ -134,6 +134,11 @@ const enrollmentSlice = createSlice({
                 state.enrolledCourses = state.enrolledCourses.filter(
                     c => c.id !== courseId
                 );
+                // Add back to available list when known
+                const course = state.allCourses.find(c => c.id === courseId);
+                if (course && !state.availableCourses.some(c => c.id === courseId)) {
+                    state.availableCourses.push(course);
+                }
                 // Update enrollment status map
                 state.enrollmentStatus[courseId] = false;
             })
