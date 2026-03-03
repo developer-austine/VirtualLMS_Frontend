@@ -6,6 +6,7 @@ import subUnitReducer from "./features/subUnit/subunitSlice"
 import enrollmentReducer from "./features/Enrollment/enrollmentSlice"
 import notesReducer from "./features/Notes/noteSlice"
 import attendanceReducer from "./features/Attendance/attendanceSlice"
+import branchReducer from "./features/Branch/branchSlice"
 
 const globalState = configureStore({
     reducer: {
@@ -16,6 +17,7 @@ const globalState = configureStore({
         enrollment: enrollmentReducer,
         notes: notesReducer,
         attendance: attendanceReducer,
+        branch: branchReducer,
     }
 })
 
