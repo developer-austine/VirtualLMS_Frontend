@@ -58,11 +58,7 @@ const userSlice = createSlice({
             .addCase(getUserById.fulfilled, (state, action) => {
                 state.selectedUser = action.payload;
             })
-            .addCase(logout.fulfilled, (state) => {
-                state.userProfile = null;
-                state.selectedUser = null;
-                state.error = null;
-            })
+            .addCase(logout.fulfilled, () => initialState)
     }
 })
 
