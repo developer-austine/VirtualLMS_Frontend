@@ -2,17 +2,30 @@ import api from "@/utils/api";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
+interface LoginPayload {
+    email: string;
+    password: string;
+}
+
+interface SignupPayload {
+    fullName: string;
+    email: string;
+    password: string;
+    phone?: string;
+    role: string;
+}
+
+// POST /auth/signup
 export const signup = createAsyncThunk(
     "auth/signup",
-    async (userData, { rejectWithValue }) => {
+    async (userData: SignupPayload, { rejectWithValue }) => {
         try {
             const res = await api.post("/auth/signup", userData);
-            localStorage.setItem("jwt", res.data.data.jwt);
+            // AuthResponse: { jwt, message, user }
+            localStorage.setItem("jwt", res.data.jwt);
             console.log("signup success", res.data);
             return res.data;
         } catch (error) {
-            console.log("signup error", error);
-            //check if it's an Axios error first
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Signup Failed");
             }
@@ -21,16 +34,17 @@ export const signup = createAsyncThunk(
     }
 );
 
+// POST /auth/login
 export const login = createAsyncThunk(
     "auth/login",
-    async (loginData, { rejectWithValue }) => {
+    async (loginData: LoginPayload, { rejectWithValue }) => {
         try {
             const res = await api.post("/auth/login", loginData);
-            localStorage.setItem("jwt", res.data.data.jwt);
+            // AuthResponse: { jwt, message, user }
+            localStorage.setItem("jwt", res.data.jwt);
             console.log("login success", res.data);
             return res.data;
         } catch (error) {
-            console.log("login error", error);
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Login Failed");
             }

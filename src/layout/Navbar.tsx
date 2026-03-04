@@ -1,8 +1,9 @@
 import { useState } from "react";
 import { ChevronDown, Menu, X, Shield } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
-import { useAuth } from "../context/authContext";
 import { useSystem } from "../context/systemContext";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/Redux-Toolkit/globalState";
 
 const studentLinks = [
   { label: "Dashboard",  href: "/dashboard"  },
@@ -34,26 +35,30 @@ const eLibraryItems = [
 ];
 
 const Navbar = () => {
-  const { isAuthenticated, role } = useAuth();
+  // ✅ Redux instead of useAuth
+  const { jwt, user } = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = !!jwt;
+  const role = user?.role; // "ROLE_ADMIN" | "ROLE_LECTURER" | "ROLE_STUDENT" | undefined
+
   const { settings } = useSystem();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [eLibOpen,   setELibOpen]   = useState(false);
 
+  // ✅ Match against Redux role strings (ROLE_ADMIN, ROLE_LECTURER, ROLE_STUDENT)
   const navLinks =
-    !isAuthenticated ? [] :
-    role === "lecturer" ? lecturerLinks :
-    role === "admin"    ? adminLinks    :
+    !isAuthenticated        ? [] :
+    role === "ROLE_LECTURER" ? lecturerLinks :
+    role === "ROLE_ADMIN"    ? adminLinks    :
     studentLinks;
 
   const isActive = (href: string) =>
     location.pathname === href || location.pathname.startsWith(href + "/");
 
-  // Use admin-set colors from systemContext, falling back to defaults
-  const navBg     = settings.themeAccentColor || "#c9a227";
-  const navText   = settings.themeNavColor    || "#1a2a5e";
-  const uniName   = settings.universityName   || "KCAU Virtual Campus";
-  const tagline   = settings.tagline          || "KCA University";
+  const navBg   = settings.themeAccentColor || "#c9a227";
+  const navText = settings.themeNavColor    || "#1a2a5e";
+  const uniName = settings.universityName   || "KCAU Virtual Campus";
+  const tagline = settings.tagline          || "KCA University";
 
   return (
     <nav className="sticky top-0 z-50 shadow-md" style={{ backgroundColor: navBg }}>
@@ -95,7 +100,7 @@ const Navbar = () => {
           ))}
 
           {/* Admin badge */}
-          {role === "admin" && (
+          {role === "ROLE_ADMIN" && (
             <span className="ml-2 flex items-center gap-1 text-[10px] font-black px-2 py-1 rounded-full bg-white/20 text-white">
               <Shield size={11} /> ADMIN
             </span>
