@@ -28,11 +28,16 @@ import AdminDashboard from "./Features/Admin/AdminDashboard";
 import AdminUsers     from "./Features/Admin/AdminUsers";
 import AdminReports   from "./Features/Admin/AdminReports";
 import AdminSettings  from "./Features/Admin/AdminSettings";
+import AdminCreate    from "./Features/Admin/AdminCreate";
+
+//shadcn
+import { Toaster } from "sonner";
 
 function App() {
   return (
     <BrowserRouter>
       <SystemProvider>
+        <Toaster position="top-right" richColors />
           <MainLayout>
             <Routes>
               {/* ── Public ── */}
@@ -61,6 +66,8 @@ function App() {
               <Route path="/admin/users"     element={<AdminUsers />} />
               <Route path="/admin/reports"   element={<AdminReports />} />
               <Route path="/admin/settings"  element={<AdminSettings />} />
+              <Route path="/admin/create" element={<AdminCreate />} />
+
             </Routes>
           </MainLayout>
       </SystemProvider>
