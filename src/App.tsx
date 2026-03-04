@@ -1,5 +1,4 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { AuthProvider } from "./context/authContext";
 import { SystemProvider } from "./context/systemContext";
 import MainLayout from "./layout/Mainlayout";
 
@@ -34,7 +33,6 @@ function App() {
   return (
     <BrowserRouter>
       <SystemProvider>
-        <AuthProvider>
           <MainLayout>
             <Routes>
               {/* ── Public ── */}
@@ -65,7 +63,6 @@ function App() {
               <Route path="/admin/settings"  element={<AdminSettings />} />
             </Routes>
           </MainLayout>
-        </AuthProvider>
       </SystemProvider>
     </BrowserRouter>
   );

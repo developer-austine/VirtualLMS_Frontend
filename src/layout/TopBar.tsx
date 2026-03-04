@@ -1,6 +1,5 @@
 import { Phone, Mail, Bell, MessageSquare, ChevronDown, LogOut, User } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
-import { useAuth } from "../context/authContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -8,15 +7,27 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useDispatch, useSelector } from "react-redux";
+import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
+import { logout } from "@/Redux-Toolkit/features/Auth/authSlice";
 
 const TopBar = () => {
-  const { isAuthenticated, user, logout } = useAuth();
+  //Redux instead of useAuth
+  const dispatch = useDispatch<AppDispatch>();
+  const { jwt, user } = useSelector((state: RootState) => state.auth);
+  const isAuthenticated = !!jwt;
+
   const navigate = useNavigate();
 
   const handleLogout = () => {
-    logout();
+    dispatch(logout());
     navigate("/");
   };
+
+  //Get initials from fullName for the avatar
+  const avatarInitial = user?.fullName
+    ? user.fullName.charAt(0).toUpperCase()
+    : "U";
 
   return (
     <div className="bg-[#1a2a5e] text-white text-sm py-2 px-6 flex items-center justify-between">
@@ -51,14 +62,15 @@ const TopBar = () => {
             <DropdownMenuTrigger asChild>
               <button className="flex items-center gap-1.5 hover:bg-white/10 rounded-full pl-1 pr-2 py-1 transition-colors">
                 <div className="w-8 h-8 rounded-full bg-[#c9a227] text-[#1a2a5e] flex items-center justify-center font-black text-sm">
-                  {user?.avatar ?? "U"}
+                  {avatarInitial}
                 </div>
                 <ChevronDown size={13} className="text-white" />
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
               <div className="px-3 py-2">
-                <p className="font-bold text-sm text-[#1a2a5e]">{user?.name}</p>
+                {/* user.fullName and user.email from Redux UserDto */}
+                <p className="font-bold text-sm text-[#1a2a5e]">{user?.fullName}</p>
                 <p className="text-xs text-gray-400">{user?.email}</p>
               </div>
               <DropdownMenuSeparator />
