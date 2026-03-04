@@ -29,6 +29,8 @@ import AdminUsers     from "./Features/Admin/AdminUsers";
 import AdminReports   from "./Features/Admin/AdminReports";
 import AdminSettings  from "./Features/Admin/AdminSettings";
 import AdminCreate    from "./Features/Admin/AdminCreate";
+import AdminCourses          from "./Features/Admin/AdminCourses";
+import AdminAssignLecturer   from "./Features/Admin/AdminAssignLecturer";
 
 //shadcn
 import { Toaster } from "sonner";
@@ -67,6 +69,8 @@ function App() {
               <Route path="/admin/reports"   element={<AdminReports />} />
               <Route path="/admin/settings"  element={<AdminSettings />} />
               <Route path="/admin/create" element={<AdminCreate />} />
+              <Route path="/admin/courses"          element={<AdminCourses />} />
+              <Route path="/admin/assign-lecturer"  element={<AdminAssignLecturer />} />
 
             </Routes>
           </MainLayout>

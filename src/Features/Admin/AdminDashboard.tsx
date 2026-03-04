@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Users, BookOpen, Shield, Plus,
   LogOut, GitBranch, Loader2, TrendingUp,
-  GraduationCap, ChevronRight,
+  GraduationCap, ChevronRight, UserPlus,
 } from "lucide-react";
 import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
 import { getAllStudentsAdmin, getAllLecturersAdmin } from "@/Redux-Toolkit/features/Admin/adminThunk";
@@ -86,6 +86,7 @@ const AdminDashboard = () => {
     { label: "Add Student",   path: "/admin/create", icon: GraduationCap, color: "bg-blue-600 hover:bg-blue-700"    },
     { label: "Add Branch",    path: "/admin/create", icon: GitBranch,     color: "bg-teal-600 hover:bg-teal-700"    },
     { label: "Manage Courses",path: "/admin/courses",icon: BookOpen,      color: "bg-indigo-600 hover:bg-indigo-700"},
+    { label: "Assign Lecturer",path: "/admin/assign-lecturer",icon: UserPlus, color: "bg-green-600 hover:bg-green-700"},
   ];
 
   return (

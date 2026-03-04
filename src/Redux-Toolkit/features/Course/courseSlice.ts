@@ -31,6 +31,7 @@ interface CourseDto {
     createdAt: string;
     updatedAt: string;
     lastModifiedAt: string;
+    lecturers?: LecturerDto[];
 }
 
 interface LecturerDto {
