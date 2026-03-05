@@ -1,5 +1,8 @@
 import { useState } from "react";
+import React from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
 import {
   Bold, Italic, Underline, Strikethrough,
   AlignLeft, AlignCenter, AlignRight, AlignJustify,
@@ -7,6 +10,7 @@ import {
   Undo, Redo, Minus, RemoveFormatting,
   Link2, Type, Highlighter, Palette,
   Send, Save, CheckCircle2, ChevronDown, ArrowLeft,
+  Loader2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -18,9 +22,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { useNotesEditor } from "../../hooks/useNotesEditor";
-import { lecturerCourses } from "./data/lecturerCourses";
-import schoolOfBusiness from "../../assets/school-of-business.png";
+import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
+import { createNote } from "@/Redux-Toolkit/features/Notes/noteThunk";
+import { useBanner } from "@/hooks/useBanner";
 
+// ── Toolbar helpers ───────────────────────────────────────────────────────────
 const TB = ({ onClick, title, children }: {
   onClick: () => void; title: string; children: React.ReactNode;
 }) => (
@@ -38,25 +44,71 @@ const Sep = () => <div className="w-px h-6 bg-gray-200 mx-1" />;
 const FONT_SIZES: Record<string, string> = {
   "1": "8pt","2":"10pt","3":"12pt","4":"14pt","5":"18pt","6":"24pt","7":"36pt",
 };
-const TEXT_COLORS = ["#000000","#1a2a5e","#c9a227","#ef4444","#22c55e","#3b82f6","#8b5cf6","#f97316","#6b7280","#ffffff"];
+const TEXT_COLORS      = ["#000000","#1a2a5e","#c9a227","#ef4444","#22c55e","#3b82f6","#8b5cf6","#f97316","#6b7280","#ffffff"];
 const HIGHLIGHT_COLORS = ["#fef08a","#bbf7d0","#bfdbfe","#fde68a","#fecaca","#e9d5ff","#fed7aa","#f0f0f0"];
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 const NotesEditor = () => {
   const { id, noteId } = useParams();
-  const navigate = useNavigate();
-  const location = useLocation();
-  const course = lecturerCourses.find((c) => c.id === id);
+  const navigate       = useNavigate();
+  const location       = useLocation();
+  const dispatch       = useDispatch<AppDispatch>();
 
+  const { jwt }               = useSelector((state: RootState) => state.auth);
+  const { loading: saving }   = useSelector((state: RootState) => state.notes);
+  const token = jwt || localStorage.getItem("jwt") || "";
+
+  // subUnitId may be passed via location.state when creating a new note
+  const subUnitId   = (location.state as any)?.subUnitId as number | undefined;
   const initialTitle = (location.state as { title?: string })?.title ?? "Untitled Note";
+
   const ed = useNotesEditor(noteId ?? "new", initialTitle);
 
   const [linkDialog, setLinkDialog] = useState(false);
-  const [linkUrl, setLinkUrl]       = useState("");
-  const [linkText, setLinkText]     = useState("");
+  const [linkUrl,    setLinkUrl]    = useState("");
+  const [linkText,   setLinkText]   = useState("");
+  const [published,  setPublished]  = useState(false);
+  const [publishing, setPublishing] = useState(false);
 
+  // ── Publish = POST to backend ─────────────────────────────────────────────
   const handlePublish = async () => {
-    await ed.publish();
-    setTimeout(() => navigate(`/lecturer/course/${id}`), 1000);
+    if (!id || !subUnitId) {
+      toast.error("Missing course or sub-unit context. Cannot publish.");
+      return;
+    }
+    // Read content directly from the contentEditable div via the ref
+    const content = (ed.initContent as unknown as React.RefObject<HTMLDivElement>).current?.innerHTML ?? "";
+    if (!content.trim() || content === "<br>") {
+      toast.error("Note has no content to publish");
+      return;
+    }
+
+    setPublishing(true);
+    const result = await dispatch(createNote({
+      courseId:  Number(id),
+      subUnitId: Number(subUnitId),
+      token,
+      data: {
+        title:   ed.title,
+        content: content,
+      },
+    }));
+    setPublishing(false);
+
+    if (createNote.fulfilled.match(result)) {
+      toast.success("Note published successfully!");
+      setPublished(true);
+      setTimeout(() => navigate(`/lecturer/course/${id}`), 1200);
+    } else {
+      toast.error(result.payload as string || "Failed to publish note");
+    }
+  };
+
+  // ── Local save (keeps using useNotesEditor hook's local save) ─────────────
+  const handleSave = () => {
+    ed.save();
+    toast.success("Draft saved locally");
   };
 
   const handleLink = () => {
@@ -68,7 +120,7 @@ const NotesEditor = () => {
     <div
       className="min-h-screen w-full"
       style={{
-        backgroundImage: `url(${schoolOfBusiness})`,
+        backgroundImage: `url(${useBanner()})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
@@ -77,7 +129,7 @@ const NotesEditor = () => {
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden">
 
-          {/* ── Top bar ─────────────────────────── */}
+          {/* ── Top bar ─────────────────────────────────────────────────── */}
           <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100">
             <div className="flex items-center gap-3 flex-1 min-w-0">
               <button
@@ -96,31 +148,51 @@ const NotesEditor = () => {
             </div>
             <div className="flex items-center gap-2 flex-shrink-0 ml-4">
               {ed.lastSaved && (
-                <span className="text-[10px] text-gray-400 hidden sm:block">Saved {ed.lastSaved}</span>
+                <span className="text-[10px] text-gray-400 hidden sm:block">
+                  Draft saved {ed.lastSaved}
+                </span>
               )}
-              <span className="text-[10px] text-gray-400 hidden sm:block">{ed.wordCount} words</span>
-              <Button variant="outline" size="sm" onClick={() => ed.save()} disabled={ed.saving} className="gap-1.5 text-xs border-gray-200">
-                {ed.saving
-                  ? <><div className="w-3 h-3 border-2 border-gray-400 border-t-transparent rounded-full animate-spin" /> Saving...</>
-                  : <><Save size={13} /> Save</>
-                }
+              <span className="text-[10px] text-gray-400 hidden sm:block">
+                {ed.wordCount} words
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleSave}
+                className="gap-1.5 text-xs border-gray-200"
+              >
+                <Save size={13} /> Save Draft
               </Button>
-              <Button size="sm" onClick={handlePublish}
-                className={`gap-1.5 text-xs font-bold text-white ${ed.published ? "bg-green-600 hover:bg-green-700" : "bg-[#1a2a5e] hover:bg-[#132047]"}`}>
-                {ed.published ? <><CheckCircle2 size={13} /> Published!</> : <><Send size={13} /> Publish</>}
+              <Button
+                size="sm"
+                onClick={handlePublish}
+                disabled={publishing || published}
+                className={`gap-1.5 text-xs font-bold text-white ${
+                  published
+                    ? "bg-green-600 hover:bg-green-700"
+                    : "bg-[#1a2a5e] hover:bg-[#132047]"
+                }`}
+              >
+                {publishing
+                  ? <><Loader2 size={13} className="animate-spin" /> Publishing...</>
+                  : published
+                  ? <><CheckCircle2 size={13} /> Published!</>
+                  : <><Send size={13} /> Publish</>
+                }
               </Button>
             </div>
           </div>
 
-          {/* Course badge */}
-          {course && (
+          {/* Sub-unit context badge */}
+          {subUnitId && (
             <div className="px-6 py-2 bg-indigo-50/60 border-b border-gray-100 flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${course.color}`} />
-              <span className="text-xs text-gray-500 font-semibold">{course.code}: {course.name}</span>
+              <span className="text-xs text-indigo-500 font-semibold">
+                Publishing to sub-unit #{subUnitId}
+              </span>
             </div>
           )}
 
-          {/* ── Toolbar ──────────────────────────── */}
+          {/* ── Toolbar ──────────────────────────────────────────────────── */}
           <div className="px-4 py-2 border-b border-gray-100 bg-gray-50/80">
             <div className="flex flex-wrap items-center gap-0.5">
               <TB onClick={ed.undo} title="Undo"><Undo size={14} /></TB>
@@ -133,9 +205,9 @@ const NotesEditor = () => {
                   </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
-                  <DropdownMenuItem onSelect={ed.heading1} className="font-black text-xl">Heading 1</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={ed.heading2} className="font-black text-lg">Heading 2</DropdownMenuItem>
-                  <DropdownMenuItem onSelect={ed.heading3} className="font-black text-base">Heading 3</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={ed.heading1}  className="font-black text-xl">Heading 1</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={ed.heading2}  className="font-black text-lg">Heading 2</DropdownMenuItem>
+                  <DropdownMenuItem onSelect={ed.heading3}  className="font-black text-base">Heading 3</DropdownMenuItem>
                   <DropdownMenuItem onSelect={ed.paragraph}>Paragraph</DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -152,9 +224,9 @@ const NotesEditor = () => {
                 </DropdownMenuContent>
               </DropdownMenu>
               <Sep />
-              <TB onClick={ed.bold}          title="Bold">        <Bold size={14} /></TB>
-              <TB onClick={ed.italic}        title="Italic">      <Italic size={14} /></TB>
-              <TB onClick={ed.underline}     title="Underline">   <Underline size={14} /></TB>
+              <TB onClick={ed.bold}          title="Bold">         <Bold size={14} /></TB>
+              <TB onClick={ed.italic}        title="Italic">       <Italic size={14} /></TB>
+              <TB onClick={ed.underline}     title="Underline">    <Underline size={14} /></TB>
               <TB onClick={ed.strikethrough} title="Strikethrough"><Strikethrough size={14} /></TB>
               <Sep />
               <DropdownMenu>
@@ -208,9 +280,10 @@ const NotesEditor = () => {
             </div>
           </div>
 
-          {/* ── Editor ───────────────────────────── */}
+          {/* ── Editor body ──────────────────────────────────────────────── */}
           <div className="relative px-12 py-10 min-h-[520px]">
-            <div className="absolute inset-0 pointer-events-none"
+            <div
+              className="absolute inset-0 pointer-events-none"
               style={{
                 backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #e5e7eb 31px, #e5e7eb 32px)",
                 backgroundPositionY: "40px",
@@ -229,23 +302,25 @@ const NotesEditor = () => {
             />
           </div>
 
-          {/* ── Status bar ───────────────────────── */}
+          {/* ── Status bar ───────────────────────────────────────────────── */}
           <div className="flex items-center justify-between px-6 py-2 bg-gray-50 border-t border-gray-100">
             <div className="flex items-center gap-4 text-[10px] text-gray-400">
               <span>{ed.wordCount} words</span>
-              {ed.lastSaved && <span>Last saved: {ed.lastSaved}</span>}
-              {ed.published && (
+              {ed.lastSaved && <span>Draft saved: {ed.lastSaved}</span>}
+              {published && (
                 <span className="flex items-center gap-1 text-green-600 font-bold">
-                  <CheckCircle2 size={10} /> Published
+                  <CheckCircle2 size={10} /> Published to backend
                 </span>
               )}
             </div>
-            <span className="text-[10px] text-gray-300">SKYLIMIT  Virtual Campus · Lecturer Notes</span>
+            <span className="text-[10px] text-gray-300">
+              SKYLIMIT Virtual Campus · Lecturer Notes
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Link dialog */}
+      {/* ── Link dialog ──────────────────────────────────────────────────────── */}
       <Dialog open={linkDialog} onOpenChange={setLinkDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>

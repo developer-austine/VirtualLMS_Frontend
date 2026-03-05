@@ -1,22 +1,24 @@
 import { useState, useCallback, useRef } from "react";
-import { notesStore } from "@/Features/Lecturer/data/Notesstore";
+import React from "react";
 
-export const useNotesEditor = (materialId: string, initialTitle = "Untitled Note") => {
-  const [title, setTitle]         = useState(() => notesStore.load(materialId)?.title ?? initialTitle);
-  const [published, setPublished] = useState(() => notesStore.load(materialId)?.published ?? false);
-  const [lastSaved, setLastSaved] = useState<string | null>(() => notesStore.load(materialId)?.savedAt ?? null);
-  const [saving, setSaving]       = useState(false);
+// ── No more notesStore / localStorage dependency ──────────────────────────────
+// Content lives in the contentEditable div (editorRef).
+// Saving is now just an in-memory draft save — actual persistence happens via
+// Redux createNote thunk in NotesEditor.tsx when the user clicks "Publish".
+
+export const useNotesEditor = (noteId: string, initialTitle = "Untitled Note") => {
+  const [title,     setTitle]     = useState(initialTitle);
+  const [lastSaved, setLastSaved] = useState<string | null>(null);
+  const [saving,    setSaving]    = useState(false);
   const [wordCount, setWordCount] = useState(0);
+
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // Pre-fill editor with saved content on mount
   const initContent = useCallback((node: HTMLDivElement | null) => {
     if (node) {
-      const saved = notesStore.load(materialId);
-      if (saved?.content) node.innerHTML = saved.content;
       (editorRef as React.MutableRefObject<HTMLDivElement | null>).current = node;
     }
-  }, [materialId]);
+  }, [noteId]);
 
   const exec = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value ?? undefined);
@@ -28,32 +30,27 @@ export const useNotesEditor = (materialId: string, initialTitle = "Untitled Note
     setWordCount(text.trim().split(/\s+/).filter(Boolean).length);
   }, []);
 
-  const save = useCallback(async (andPublish = false) => {
+  const save = useCallback(async () => {
     setSaving(true);
-    await new Promise((r) => setTimeout(r, 500));
+    await new Promise((r) => setTimeout(r, 300));
     const now = new Date().toLocaleString("en-GB");
-    const content = editorRef.current?.innerHTML ?? "";
-    notesStore.save({
-      materialId,
-      title,
-      content,
-      savedAt: now,
-      published: andPublish ? true : (notesStore.load(materialId)?.published ?? false),
-    });
     setLastSaved(now);
     setSaving(false);
-    if (andPublish) setPublished(true);
-    return { title, content, savedAt: now };
-  }, [materialId, title]);
-
-  const publish = useCallback(async () => {
-    return save(true);
-  }, [save]);
+  }, []);
 
   return {
-    title, setTitle,
-    published, lastSaved, saving, wordCount,
-    editorRef, initContent, countWords,
+  
+    title,        setTitle,
+    lastSaved,    saving,
+    wordCount,
+
+    editorRef,
+    initContent,
+    countWords,
+
+    save,
+
+    // Formatting commands
     bold:          () => exec("bold"),
     italic:        () => exec("italic"),
     underline:     () => exec("underline"),
@@ -78,7 +75,9 @@ export const useNotesEditor = (materialId: string, initialTitle = "Untitled Note
     setColor:      (v: string) => exec("foreColor", v),
     setHighlight:  (v: string) => exec("hiliteColor", v),
     insertLink:    (url: string, text: string) =>
-      exec("insertHTML", `<a href="${url}" target="_blank" style="color:#1a2a5e;text-decoration:underline">${text || url}</a>`),
-    save, publish,
+      exec(
+        "insertHTML",
+        `<a href="${url}" target="_blank" style="color:#1a2a5e;text-decoration:underline">${text || url}</a>`
+      ),
   };
 };
