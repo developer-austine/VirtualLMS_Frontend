@@ -19,6 +19,7 @@ interface AssignLecturerPayload {
     lecturerId: number;
 }
 
+
 export const createCourse = createAsyncThunk(
     "course/create",
     async ({ token, data }: CreateCoursePayload, { rejectWithValue }) => {
@@ -26,12 +27,10 @@ export const createCourse = createAsyncThunk(
             const res = await api.post("/api/admin/courses", data, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("create course success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to create course");
-            }
             return rejectWithValue("Failed to create course");
         }
     }
@@ -44,12 +43,11 @@ export const getAllCourses = createAsyncThunk(
             const res = await api.get("/api/admin/courses", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("get all courses success", res.data);
-            return res.data;
+            // ✅ API returns { message, success, data: [...] } — extract the array
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch courses");
-            }
             return rejectWithValue("Failed to fetch courses");
         }
     }
@@ -62,17 +60,16 @@ export const getCourseById = createAsyncThunk(
             const res = await api.get(`/api/admin/courses/${courseId}`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("get course by id success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch course");
-            }
             return rejectWithValue("Failed to fetch course");
         }
     }
 );
 
+// Admin's own courses (courses created by this admin)
 export const getMyCourses = createAsyncThunk(
     "course/getMyCourses",
     async (token: string, { rejectWithValue }) => {
@@ -80,33 +77,11 @@ export const getMyCourses = createAsyncThunk(
             const res = await api.get("/api/admin/my-courses", {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("get my courses success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch my courses");
-            }
             return rejectWithValue("Failed to fetch my courses");
-        }
-    }
-);
-
-// GET /api/lecturer/courses/{courseId}/students
-export const getEnrolledStudents = createAsyncThunk(
-    "course/getEnrolledStudents",
-    async ({ courseId, token }: { courseId: number; token: string }, { rejectWithValue }) => {
-        try {
-            const res = await api.get(
-                `/api/lecturer/courses/${courseId}/students`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            console.log("get enrolled students success", res.data);
-            return res.data;
-        } catch (error) {
-            if (axios.isAxiosError(error)) {
-                return rejectWithValue(error.response?.data?.message || "Failed to fetch enrolled students");
-            }
-            return rejectWithValue("Failed to fetch enrolled students");
         }
     }
 );
@@ -120,12 +95,10 @@ export const assignLecturerToCourse = createAsyncThunk(
                 { courseId, lecturerId },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
-            console.log("assign lecturer success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to assign lecturer");
-            }
             return rejectWithValue("Failed to assign lecturer");
         }
     }
@@ -139,12 +112,10 @@ export const removeLecturerFromCourse = createAsyncThunk(
                 headers: { Authorization: `Bearer ${token}` },
                 data: { courseId, lecturerId }
             });
-            console.log("remove lecturer success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to remove lecturer");
-            }
             return rejectWithValue("Failed to remove lecturer");
         }
     }
@@ -157,12 +128,10 @@ export const getCoursesByLecturer = createAsyncThunk(
             const res = await api.get(`/api/admin/lecturers/${lecturerId}/courses`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("get courses by lecturer success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch lecturer courses");
-            }
             return rejectWithValue("Failed to fetch lecturer courses");
         }
     }
@@ -175,13 +144,63 @@ export const getLecturersByCourse = createAsyncThunk(
             const res = await api.get(`/api/admin/courses/${courseId}/lecturers`, {
                 headers: { Authorization: `Bearer ${token}` }
             });
-            console.log("get lecturers by course success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
-            if (axios.isAxiosError(error)) {
+            if (axios.isAxiosError(error))
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch course lecturers");
-            }
             return rejectWithValue("Failed to fetch course lecturers");
+        }
+    }
+);
+
+// GET /api/lecturer/courses — courses assigned to the logged-in lecturer
+export const getLecturerCourses = createAsyncThunk(
+    "course/getLecturerCourses",
+    async (token: string, { rejectWithValue }) => {
+        try {
+            const res = await api.get("/api/lecturer/courses", {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            // ✅ Unwrap ApiResponse: { message, success, data: [...] }
+            return res.data.data ?? res.data;
+        } catch (error) {
+            if (axios.isAxiosError(error))
+                return rejectWithValue(error.response?.data?.message || "Failed to fetch lecturer courses");
+            return rejectWithValue("Failed to fetch lecturer courses");
+        }
+    }
+);
+
+// GET /api/lecturer/courses/{courseId} — single course detail for lecturer
+export const getLecturerCourseById = createAsyncThunk(
+    "course/getLecturerCourseById",
+    async ({ token, courseId }: { token: string; courseId: number }, { rejectWithValue }) => {
+        try {
+            const res = await api.get(`/api/lecturer/courses/${courseId}`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data.data ?? res.data;
+        } catch (error) {
+            if (axios.isAxiosError(error))
+                return rejectWithValue(error.response?.data?.message || "Failed to fetch course");
+            return rejectWithValue("Failed to fetch course");
+        }
+    }
+);
+
+// GET /api/lecturer/courses/{courseId}/students
+export const getEnrolledStudents = createAsyncThunk(
+    "course/getEnrolledStudents",
+    async ({ courseId, token }: { courseId: number; token: string }, { rejectWithValue }) => {
+        try {
+            const res = await api.get(`/api/lecturer/courses/${courseId}/students`, {
+                headers: { Authorization: `Bearer ${token}` }
+            });
+            return res.data.data ?? res.data;
+        } catch (error) {
+            if (axios.isAxiosError(error))
+                return rejectWithValue(error.response?.data?.message || "Failed to fetch enrolled students");
+            return rejectWithValue("Failed to fetch enrolled students");
         }
     }
 );

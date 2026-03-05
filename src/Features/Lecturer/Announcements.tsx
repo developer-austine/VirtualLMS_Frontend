@@ -1,79 +1,77 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Megaphone, Send, Trash2, Clock } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { ArrowLeft, Megaphone, Send, Trash2, Clock, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { lecturerCourses } from "./data/lecturerCourses";
-import schoolOfBusiness from "../../assets/school-of-business.png";
+import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
+import { getLecturerCourses } from "@/Redux-Toolkit/features/Course/courseThunk";
+import { useBanner } from "@/hooks/useBanner";
 
+// ── Local-only announcement type (no backend endpoint) ───────────────────────
 interface Announcement {
-  id: string;
-  courseId: string;
+  id:         string;
+  courseId:   number;
   courseName: string;
-  title: string;
-  body: string;
-  postedAt: string;
+  title:      string;
+  body:       string;
+  postedAt:   string;
 }
 
-const initialAnnouncements: Announcement[] = [
-  {
-    id: "ann1", courseId: "lc1",
-    courseName: "CPP 3202: Advanced Java Programming",
-    title: "Quiz 1 is now open",
-    body: "Dear students, Quiz 1 covering Lecture 3 is now open on the portal. You have until Friday 14th Feb to complete it. Good luck!",
-    postedAt: "2026-02-12 04:50 PM",
-  },
-  {
-    id: "ann2", courseId: "lc2",
-    courseName: "CPP 3204: Network Programming",
-    title: "Assignment 1 reminder",
-    body: "This is a reminder that Assignment 1 is due this Friday. Please ensure your submission is uploaded before 11:59 PM.",
-    postedAt: "2026-02-08 09:00 AM",
-  },
-];
-
 const Announcements = () => {
+  const bgImage  = useBanner();
   const navigate = useNavigate();
-  const [announcements, setAnnouncements] = useState<Announcement[]>(initialAnnouncements);
-  const [form, setForm] = useState({ courseId: "", title: "", body: "" });
+  const dispatch = useDispatch<AppDispatch>();
+
+  const { myCourses, loading } = useSelector((state: RootState) => state.course);
+  const { jwt }                = useSelector((state: RootState) => state.auth);
+  const token = jwt || localStorage.getItem("jwt") || "";
+
+  const [announcements, setAnnouncements] = useState<Announcement[]>([]);
+  const [form,  setForm]  = useState({ courseId: "" as string | number, title: "", body: "" });
   const [posted, setPosted] = useState(false);
+
+  useEffect(() => {
+    if (!token) { navigate("/login"); return; }
+    dispatch(getLecturerCourses(token));
+  }, [dispatch, token, navigate]);
 
   const handlePost = () => {
     if (!form.courseId || !form.title.trim() || !form.body.trim()) return;
-    const course = lecturerCourses.find((c) => c.id === form.courseId);
+    const course = myCourses.find((c) => c.id === Number(form.courseId));
     const newAnn: Announcement = {
-      id: `ann${Date.now()}`,
-      courseId: form.courseId,
-      courseName: course ? `${course.code}: ${course.name}` : "",
-      title: form.title,
-      body: form.body,
+      id:         `ann${Date.now()}`,
+      courseId:   Number(form.courseId),
+      courseName: course
+        ? `${course.courseCode ? course.courseCode + ": " : ""}${course.courseName}`
+        : "",
+      title:   form.title,
+      body:    form.body,
       postedAt: new Date().toLocaleString("en-GB"),
     };
-    setAnnouncements((p) => [newAnn, ...p]);
+    setAnnouncements(p => [newAnn, ...p]);
     setForm({ courseId: "", title: "", body: "" });
     setPosted(true);
     setTimeout(() => setPosted(false), 2000);
   };
 
   const deleteAnn = (id: string) =>
-    setAnnouncements((p) => p.filter((a) => a.id !== id));
+    setAnnouncements(p => p.filter(a => a.id !== id));
 
   return (
     <div
       className="min-h-screen w-full"
       style={{
-        backgroundImage: `url(${schoolOfBusiness})`,
+        backgroundImage: `url(${bgImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
       }}
     >
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
-
-        {/* ── ONE CARD ─────────────────────────────── */}
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 
-          {/* Header */}
+          {/* ── Header ───────────────────────────────────────────────────── */}
           <div className="px-6 py-5 border-b border-gray-100">
             <button
               onClick={() => navigate("/lecturer/dashboard")}
@@ -89,7 +87,7 @@ const Announcements = () => {
             </p>
           </div>
 
-          {/* ── Compose section ──────────────────────── */}
+          {/* ── Compose ──────────────────────────────────────────────────── */}
           <div className="px-6 py-5 border-b border-gray-100 bg-gray-50/40">
             <h2 className="text-sm font-black text-[#1a2a5e] uppercase tracking-wide mb-4">
               New Announcement
@@ -100,21 +98,30 @@ const Announcements = () => {
               <label className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2 block">
                 Select Course
               </label>
-              <div className="flex flex-wrap gap-2">
-                {lecturerCourses.map((c) => (
-                  <button
-                    key={c.id}
-                    onClick={() => setForm((p) => ({ ...p, courseId: c.id }))}
-                    className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
-                      form.courseId === c.id
-                        ? "bg-[#1a2a5e] text-white border-[#1a2a5e]"
-                        : "border-gray-200 text-gray-600 hover:border-[#c9a227] hover:text-[#c9a227]"
-                    }`}
-                  >
-                    {c.code}
-                  </button>
-                ))}
-              </div>
+              {loading ? (
+                <div className="flex items-center gap-2 text-gray-400">
+                  <Loader2 size={13} className="animate-spin" />
+                  <span className="text-xs">Loading courses...</span>
+                </div>
+              ) : myCourses.length === 0 ? (
+                <p className="text-xs text-gray-400 italic">No courses assigned yet.</p>
+              ) : (
+                <div className="flex flex-wrap gap-2">
+                  {myCourses.map((c) => (
+                    <button
+                      key={c.id}
+                      onClick={() => setForm(p => ({ ...p, courseId: c.id }))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-colors ${
+                        form.courseId === c.id
+                          ? "bg-[#1a2a5e] text-white border-[#1a2a5e]"
+                          : "border-gray-200 text-gray-600 hover:border-[#c9a227] hover:text-[#c9a227]"
+                      }`}
+                    >
+                      {c.courseCode ?? c.courseName}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Title */}
@@ -124,7 +131,7 @@ const Announcements = () => {
               </label>
               <Input
                 value={form.title}
-                onChange={(e) => setForm((p) => ({ ...p, title: e.target.value }))}
+                onChange={(e) => setForm(p => ({ ...p, title: e.target.value }))}
                 placeholder="e.g. Quiz 2 is now open"
                 className="text-sm border-gray-200"
               />
@@ -137,7 +144,7 @@ const Announcements = () => {
               </label>
               <textarea
                 value={form.body}
-                onChange={(e) => setForm((p) => ({ ...p, body: e.target.value }))}
+                onChange={(e) => setForm(p => ({ ...p, body: e.target.value }))}
                 placeholder="Write your announcement here..."
                 rows={4}
                 className="w-full text-sm border border-gray-200 rounded-lg px-3 py-2.5 resize-none focus:outline-none focus:ring-2 focus:ring-[#c9a227] focus:border-transparent transition-all"
@@ -159,7 +166,7 @@ const Announcements = () => {
             </div>
           </div>
 
-          {/* ── Posted announcements ─────────────────── */}
+          {/* ── Posted announcements ─────────────────────────────────────── */}
           <div>
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
               <h2 className="text-sm font-black text-[#1a2a5e] uppercase tracking-wide">
@@ -173,7 +180,7 @@ const Announcements = () => {
             {announcements.length === 0 ? (
               <div className="px-6 py-12 text-center">
                 <Megaphone size={32} className="text-gray-200 mx-auto mb-3" />
-                <p className="text-sm text-gray-400">No announcements yet.</p>
+                <p className="text-sm text-gray-400">No announcements posted yet.</p>
               </div>
             ) : (
               <div className="divide-y divide-gray-100">
@@ -184,31 +191,22 @@ const Announcements = () => {
                   >
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex items-start gap-4 flex-1 min-w-0">
-                        {/* Icon */}
                         <div className="w-10 h-10 rounded-full bg-amber-50 border border-[#c9a227]/30 flex items-center justify-center flex-shrink-0 mt-0.5">
                           <Megaphone size={16} className="text-[#c9a227]" />
                         </div>
-
-                        {/* Content */}
                         <div className="flex-1 min-w-0">
-                          {/* Course badge */}
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-[10px] font-black text-[#c9a227] uppercase tracking-wide bg-amber-50 border border-[#c9a227]/20 px-2 py-0.5 rounded-full">
+                            <span className="text-[10px] font-black text-[#c9a227] uppercase tracking-wide bg-amber-50 border border-[#c9a227]/20 px-2 py-0.5 rounded-full truncate max-w-[200px]">
                               {ann.courseName}
                             </span>
                           </div>
-                          {/* Title */}
                           <p className="text-base font-black text-[#1a2a5e]">{ann.title}</p>
-                          {/* Body */}
                           <p className="text-sm text-gray-500 mt-1.5 leading-relaxed">{ann.body}</p>
-                          {/* Timestamp */}
                           <p className="text-[10px] text-gray-300 mt-2 flex items-center gap-1">
                             <Clock size={9} /> {ann.postedAt}
                           </p>
                         </div>
                       </div>
-
-                      {/* Delete */}
                       <button
                         onClick={() => deleteAnn(ann.id)}
                         className="opacity-0 group-hover:opacity-100 transition-opacity p-2 rounded-lg hover:bg-red-50 text-red-400 flex-shrink-0 mt-1"

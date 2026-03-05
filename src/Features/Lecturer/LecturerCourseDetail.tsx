@@ -1,142 +1,128 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import { useDispatch, useSelector } from "react-redux";
+import { toast } from "sonner";
 import {
   ChevronDown, ChevronUp, ArrowLeft, Plus, Megaphone,
   Link2, Video, FileText, HelpCircle, Trash2,
-  Users, BarChart2, NotebookPen,
+  Users, BarChart2, NotebookPen, Loader2, BookOpen,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
-import { lecturerCourses, lecturerCourseSections, type CourseMaterial } from "./data/lecturerCourses";
+import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
+import { getLecturerCourseById } from "@/Redux-Toolkit/features/Course/courseThunk";
+import {
+  getSubUnitsByCourse,
+  createSubUnit,
+} from "@/Redux-Toolkit/features/subUnit/subunitThunk";
 import InlineNotesViewer from "./InlineNotesViewer";
-import schoolOfBusiness from "../../assets/school-of-business.png";
+import { useBanner } from "@/hooks/useBanner";
 
-// ── Icon per material type ──────────────────────
-const typeIcon = (type: CourseMaterial["type"], size = 15) => {
-  switch (type) {
-    case "announcement": return <Megaphone     size={size} className="text-[#c9a227]"  />;
-    case "link":         return <Link2         size={size} className="text-blue-500"   />;
-    case "video":        return <Video         size={size} className="text-red-500"    />;
-    case "file":         return <FileText      size={size} className="text-orange-400" />;
-    case "quiz":         return <HelpCircle    size={size} className="text-purple-500" />;
-    case "assignment":   return <FileText      size={size} className="text-green-500"  />;
-    case "notes":        return <NotebookPen   size={size} className="text-indigo-500" />;
-  }
-};
+type MaterialType = "file" | "video" | "quiz" | "assignment" | "link" | "announcement" | "notes";
 
-const materialTypes: CourseMaterial["type"][] = [
+const materialTypes: MaterialType[] = [
   "file", "video", "quiz", "assignment", "link", "announcement", "notes",
 ];
 
-// Label for notes type in dialog
-const typeLabel = (t: CourseMaterial["type"]) =>
-  t === "notes" ? "📝 Notes" : t;
+const typeIcon = (type: MaterialType, size = 15) => {
+  switch (type) {
+    case "announcement": return <Megaphone   size={size} className="text-[#c9a227]"  />;
+    case "link":         return <Link2       size={size} className="text-blue-500"   />;
+    case "video":        return <Video       size={size} className="text-red-500"    />;
+    case "file":         return <FileText    size={size} className="text-orange-400" />;
+    case "quiz":         return <HelpCircle  size={size} className="text-purple-500" />;
+    case "assignment":   return <FileText    size={size} className="text-green-500"  />;
+    case "notes":        return <NotebookPen size={size} className="text-indigo-500" />;
+  }
+};
 
 const LecturerCourseDetail = () => {
-  const { id } = useParams();
+  const { id }   = useParams();
   const navigate = useNavigate();
+  const dispatch = useDispatch<AppDispatch>();
 
-  const course  = lecturerCourses.find((c) => c.id === id);
-  const [sections,    setSections]    = useState(lecturerCourseSections[id ?? ""] ?? []);
-  const [collapsed,   setCollapsed]   = useState<Set<string>>(new Set());
-  const [expandedNotes, setExpandedNotes] = useState<Set<string>>(new Set());
-  const [addDialog,   setAddDialog]   = useState(false);
-  const [targetSection, setTargetSection] = useState<string | null>(null);
-  const [newTitle,    setNewTitle]    = useState("");
-  const [newType,     setNewType]     = useState<CourseMaterial["type"]>("file");
-  const [newSubtitle, setNewSubtitle] = useState("");
+  const { selectedCourse, loading: courseLoading } = useSelector((state: RootState) => state.course);
+  const { subUnits, loading: subUnitLoading }       = useSelector((state: RootState) => state.subUnit);
+  const { jwt } = useSelector((state: RootState) => state.auth);
+  const token = jwt || localStorage.getItem("jwt") || "";
+
+  const [collapsed,       setCollapsed]       = useState<Set<number>>(new Set());
+  const [expandedNotes,   setExpandedNotes]   = useState<Set<number>>(new Set());
+  const [addDialog,       setAddDialog]       = useState(false);
+  const [targetSubUnit,   setTargetSubUnit]   = useState<number | null>(null);
+  const [newTitle,        setNewTitle]        = useState("");
+  const [newType,         setNewType]         = useState<MaterialType>("file");
   const [sectionDialog,   setSectionDialog]   = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
+  const [creating,        setCreating]        = useState(false);
 
-  if (!course) return (
-    <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-400">Course not found.</p>
-    </div>
-  );
+  useEffect(() => {
+    if (!token || !id) return;
+    dispatch(getLecturerCourseById({ token, courseId: Number(id) }));
+    dispatch(getSubUnitsByCourse({ token, courseId: Number(id) }));
+  }, [dispatch, id, token]);
 
-  const toggleSection = (sid: string) =>
-    setCollapsed((p) => {
-      const n = new Set(p);
-      n.has(sid) ? n.delete(sid) : n.add(sid);
-      return n;
-    });
+  const loading = courseLoading || subUnitLoading;
 
-  const addMaterial = () => {
-    if (!newTitle.trim() || !targetSection) return;
-    const matId = `m${Date.now()}`;
+  const toggleSection = (sid: number) =>
+    setCollapsed(p => { const n = new Set(p); n.has(sid) ? n.delete(sid) : n.add(sid); return n; });
 
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === targetSection
-          ? {
-              ...s,
-              materials: [...s.materials, {
-                id:         matId,
-                type:       newType,
-                title:      newTitle.trim(),
-                subtitle:   newSubtitle.trim() || undefined,
-                uploadedAt: new Date().toISOString().split("T")[0],
-              }],
-            }
-          : s
-      )
-    );
+  const toggleNotes = (sid: number) =>
+    setExpandedNotes(p => { const n = new Set(p); n.has(sid) ? n.delete(sid) : n.add(sid); return n; });
 
-    // If notes — navigate directly to the editor
-    if (newType === "notes") {
-      setAddDialog(false);
-      setNewTitle(""); setNewSubtitle("");
-      navigate(`/lecturer/course/${id}/notes/${matId}`, {
-        state: { title: newTitle.trim() },
-      });
-      return;
-    }
-
-    setNewTitle(""); setNewSubtitle(""); setAddDialog(false);
-  };
-
-  const deleteMaterial = (sectionId: string, materialId: string) =>
-    setSections((prev) =>
-      prev.map((s) =>
-        s.id === sectionId
-          ? { ...s, materials: s.materials.filter((m) => m.id !== materialId) }
-          : s
-      )
-    );
-
-  const addSection = () => {
-    if (!newSectionTitle.trim()) return;
-    setSections((prev) => [...prev, {
-      id: `s${Date.now()}`, title: newSectionTitle.trim(), materials: [],
-    }]);
-    setNewSectionTitle(""); setSectionDialog(false);
-  };
-
-  const removeSection = (sectionId: string) => {
-    setSections((prev) => prev.filter((s) => s.id !== sectionId));
-  };
-
-  const toggleNotes = (matId: string) =>
-    setExpandedNotes((p) => {
-      const n = new Set(p);
-      n.has(matId) ? n.delete(matId) : n.add(matId);
-      return n;
-    });
-
-  const openMaterial = (mat: CourseMaterial) => {
-    if (mat.type === "notes") {
-      toggleNotes(mat.id);
+  // ── Create sub-unit (section) ─────────────────────────────────────────────
+  const handleAddSection = async () => {
+    if (!newSectionTitle.trim() || !id) return;
+    setCreating(true);
+    const result = await dispatch(createSubUnit({
+      token,
+      courseId: Number(id),
+      data: { title: newSectionTitle.trim() },
+    }));
+    setCreating(false);
+    if (createSubUnit.fulfilled.match(result)) {
+      toast.success("Section created!");
+      setNewSectionTitle("");
+      setSectionDialog(false);
+      dispatch(getSubUnitsByCourse({ token, courseId: Number(id) }));
+    } else {
+      toast.error(result.payload as string || "Failed to create section");
     }
   };
+
+  // ── Notes material — navigate to editor ──────────────────────────────────
+  const openNotesEditor = (subUnitId: number, title?: string) => {
+    navigate(`/lecturer/course/${id}/notes/new`, {
+      state: { subUnitId, title: title ?? "Untitled Note" },
+    });
+  };
+
+  if (loading && !selectedCourse) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Loader2 size={24} className="animate-spin text-[#1a2a5e]" />
+      </div>
+    );
+  }
+
+  if (!selectedCourse && !loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <p className="text-gray-400 text-sm">Course not found.</p>
+      </div>
+    );
+  }
+
+  const course = selectedCourse;
 
   return (
     <div
       className="min-h-screen w-full"
       style={{
-        backgroundImage: `url(${schoolOfBusiness})`,
+        backgroundImage: `url(${useBanner()})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         backgroundAttachment: "fixed",
@@ -145,7 +131,7 @@ const LecturerCourseDetail = () => {
       <div className="relative z-10 max-w-5xl mx-auto px-4 py-8">
         <div className="bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden">
 
-          {/* ── Header ─────────────────────────── */}
+          {/* ── Header ─────────────────────────────────────────────────── */}
           <div className="px-6 py-5 border-b border-gray-100">
             <button
               onClick={() => navigate("/lecturer/courses")}
@@ -155,8 +141,15 @@ const LecturerCourseDetail = () => {
             </button>
             <div className="flex items-start justify-between flex-wrap gap-3">
               <div>
-                <h1 className="text-lg font-black text-[#1a2a5e]">{course.code}: {course.name}</h1>
-                <p className="text-xs text-gray-400 mt-0.5">{course.stream} · {course.trim}</p>
+                <h1 className="text-lg font-black text-[#1a2a5e]">
+                  {course?.courseCode && <span className="text-gray-400 mr-1">{course.courseCode}:</span>}
+                  {course?.courseName}
+                </h1>
+                <p className="text-xs text-gray-400 mt-0.5">
+                  {course?.semester}
+                  {course?.creditHours && ` · ${course.creditHours} credits`}
+                  {course?.totalEnrolledStudents != null && ` · ${course.totalEnrolledStudents} students`}
+                </p>
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200"
@@ -175,137 +168,117 @@ const LecturerCourseDetail = () => {
             </div>
           </div>
 
-          {/* ── Sections ───────────────────────── */}
+          {/* ── Sub-units (sections) ───────────────────────────────────── */}
           <div className="p-6 space-y-3">
-            {sections.map((section) => {
-              const isCollapsed = collapsed.has(section.id);
-              return (
-                <div key={section.id} className="border border-gray-200 rounded-lg overflow-hidden">
-                  {/* Section header */}
-                  <div className="flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <button
-                      className="flex items-center gap-2 flex-1 text-left"
-                      onClick={() => toggleSection(section.id)}
-                    >
-                      {isCollapsed
-                        ? <ChevronDown size={15} className="text-[#c9a227]" />
-                        : <ChevronUp   size={15} className="text-[#c9a227]" />
-                      }
-                      <span className="font-bold text-sm text-[#1a2a5e]">{section.title}</span>
-                      <span className="text-xs text-gray-400">({section.materials.length})</span>
-                    </button>
-                    <div className="flex items-center gap-3">
+            {subUnitLoading ? (
+              <div className="flex items-center gap-2 text-gray-400 py-6">
+                <Loader2 size={16} className="animate-spin" />
+                <span className="text-xs font-semibold">Loading sections...</span>
+              </div>
+            ) : subUnits.length === 0 ? (
+              <div className="text-center py-12">
+                <BookOpen size={32} className="text-gray-200 mx-auto mb-3" />
+                <p className="text-sm text-gray-400 font-semibold">No sections yet</p>
+                <button
+                  onClick={() => setSectionDialog(true)}
+                  className="mt-3 text-xs font-bold text-[#c9a227] hover:underline flex items-center gap-1 mx-auto"
+                >
+                  <Plus size={11} /> Add first section
+                </button>
+              </div>
+            ) : (
+              subUnits.map((section: any) => {
+                const isCollapsed = collapsed.has(section.id);
+                return (
+                  <div key={section.id} className="border border-gray-200 rounded-lg overflow-hidden">
+                    {/* Section header */}
+                    <div className="flex items-center justify-between px-4 py-3 bg-gray-50 hover:bg-gray-100 transition-colors">
                       <button
-                        onClick={() => { setTargetSection(section.id); setAddDialog(true); }}
-                        className="flex items-center gap-1 text-xs text-[#c9a227] font-semibold hover:underline"
+                        className="flex items-center gap-2 flex-1 text-left"
+                        onClick={() => toggleSection(section.id)}
                       >
-                        <Plus size={12} /> Add material
+                        {isCollapsed
+                          ? <ChevronDown size={15} className="text-[#c9a227]" />
+                          : <ChevronUp   size={15} className="text-[#c9a227]" />
+                        }
+                        <span className="font-bold text-sm text-[#1a2a5e]">{section.title}</span>
                       </button>
-                      <div className="w-px h-4 bg-gray-200" />
-                      <button
-                        onClick={() => removeSection(section.id)}
-                        className="flex items-center gap-1 text-xs text-red-400 font-semibold hover:text-red-600 hover:underline"
-                      >
-                        <Trash2 size={12} /> Remove section
-                      </button>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => openNotesEditor(section.id)}
+                          className="flex items-center gap-1 text-xs text-indigo-500 font-semibold hover:underline"
+                        >
+                          <NotebookPen size={12} /> Add Notes
+                        </button>
+                        <div className="w-px h-4 bg-gray-200" />
+                        <button
+                          onClick={() => {
+                            setTargetSubUnit(section.id);
+                            setAddDialog(true);
+                          }}
+                          className="flex items-center gap-1 text-xs text-[#c9a227] font-semibold hover:underline"
+                        >
+                          <Plus size={12} /> Add material
+                        </button>
+                      </div>
                     </div>
-                  </div>
 
-                  {/* Materials list */}
-                  {!isCollapsed && (
-                    <div className="divide-y divide-gray-100">
-                      {section.materials.length === 0 && (
-                        <p className="text-xs text-gray-400 px-4 py-3 italic">
-                          No materials yet. Click "Add material" to get started.
-                        </p>
-                      )}
-                      {section.materials.map((mat) => (
-                        <div key={mat.id}>
-                          <div
-                            className={`flex items-center justify-between px-4 py-3 hover:bg-gray-50 group transition-colors ${
-                              mat.type === "notes" ? "cursor-pointer" : ""
-                            }`}
-                            onClick={() => openMaterial(mat)}
+                    {/* Content */}
+                    {!isCollapsed && (
+                      <div className="divide-y divide-gray-100">
+                        {/* Notes viewer */}
+                        <div className="py-2">
+                          <button
+                            onClick={() => toggleNotes(section.id)}
+                            className="flex items-center gap-1.5 text-xs font-bold text-indigo-500 hover:underline px-4 py-1"
                           >
-                            <div className="flex items-start gap-3">
-                              {mat.type === "notes" ? (
-                                <div className="mt-0.5 flex items-center gap-1.5 px-2 py-0.5 bg-indigo-50 border border-indigo-200 rounded-full">
-                                  <NotebookPen size={12} className="text-indigo-500" />
-                                  <span className="text-[10px] font-bold text-indigo-600">Notes</span>
-                                </div>
-                              ) : (
-                                <div className="mt-0.5">{typeIcon(mat.type)}</div>
-                              )}
-                              <div>
-                                <p className={`text-sm font-medium ${
-                                  mat.type === "notes"
-                                    ? "text-indigo-600 group-hover:underline"
-                                    : "text-[#c9a227]"
-                                }`}>
-                                  {mat.title}
-                                  {mat.type === "notes" && (
-                                    <span className="ml-2 text-[10px] text-indigo-400">
-                                      {expandedNotes.has(mat.id) ? "▲ collapse" : "▼ expand"}
-                                    </span>
-                                  )}
-                                </p>
-                                {mat.subtitle && <p className="text-xs text-gray-400">{mat.subtitle}</p>}
-                                <p className="text-[10px] text-gray-300 mt-0.5">Added {mat.uploadedAt}</p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              {mat.type === "notes" && (
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    navigate(`/lecturer/course/${id}/notes/${mat.id}`, {
-                                      state: { title: mat.title },
-                                    });
-                                  }}
-                                  className="text-[11px] font-bold text-indigo-500 border border-indigo-200 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded-full transition-colors opacity-0 group-hover:opacity-100"
-                                >
-                                  ✏️ Edit
-                                </button>
-                              )}
-                              <button
-                                onClick={(e) => { e.stopPropagation(); deleteMaterial(section.id, mat.id); }}
-                                className="opacity-0 group-hover:opacity-100 transition-opacity p-1.5 rounded hover:bg-red-50 text-red-400"
-                              >
-                                <Trash2 size={13} />
-                              </button>
-                            </div>
-                          </div>
-
-                          {/* ── Inline notes viewer ── */}
-                          {mat.type === "notes" && expandedNotes.has(mat.id) && (
+                            <NotebookPen size={12} />
+                            {expandedNotes.has(section.id) ? "▲ Hide notes" : "▼ View notes"}
+                          </button>
+                          {expandedNotes.has(section.id) && (
                             <InlineNotesViewer
-                              materialId={mat.id}
+                              subUnitId={section.id}
+                              courseId={Number(id)}
                               isLecturer={true}
-                              onEdit={() => navigate(`/lecturer/course/${id}/notes/${mat.id}`, {
-                                state: { title: mat.title },
-                              })}
+                              onEdit={() => openNotesEditor(section.id)}
                             />
                           )}
                         </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
+
+                        {/* Materials placeholder — extend when sub-unit materials endpoint is added */}
+                        {(section.materials ?? []).length === 0 && (
+                          <p className="text-xs text-gray-400 px-4 py-3 italic">
+                            No other materials yet. Click "Add material" to get started.
+                          </p>
+                        )}
+                        {(section.materials ?? []).map((mat: any) => (
+                          <div key={mat.id} className="flex items-center justify-between px-4 py-3 hover:bg-gray-50 group">
+                            <div className="flex items-start gap-3">
+                              <div className="mt-0.5">{typeIcon(mat.type)}</div>
+                              <div>
+                                <p className="text-sm font-medium text-[#c9a227]">{mat.title}</p>
+                                {mat.subtitle && <p className="text-xs text-gray-400">{mat.subtitle}</p>}
+                              </div>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })
+            )}
           </div>
         </div>
       </div>
 
-      {/* ── Add Material Dialog ─────────────────── */}
+      {/* ── Add Material Dialog ─────────────────────────────────────────────── */}
       <Dialog open={addDialog} onOpenChange={setAddDialog}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#1a2a5e] font-black">Add Material</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 mt-2">
-
-            {/* Type grid */}
             <div>
               <label className="text-xs font-semibold text-gray-600 mb-2 block">Type</label>
               <div className="grid grid-cols-4 gap-2">
@@ -322,26 +295,24 @@ const LecturerCourseDetail = () => {
                     }`}
                   >
                     {typeIcon(t, 18)}
-                    <span className="text-[10px]">{t === "notes" ? "Notes" : t}</span>
+                    <span className="text-[10px]">{t}</span>
                   </button>
                 ))}
               </div>
             </div>
 
-            {/* Notes special CTA */}
             {newType === "notes" && (
               <div className="flex items-start gap-3 p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
                 <NotebookPen size={20} className="text-indigo-500 flex-shrink-0 mt-0.5" />
                 <div>
                   <p className="text-xs font-black text-indigo-700">Rich Notes Editor</p>
                   <p className="text-[11px] text-indigo-500 mt-0.5">
-                    You'll be taken to a full word-processor with bold, italic, headings, lists, colors and more.
+                    You'll be taken to a full editor with formatting, colors, and more.
                   </p>
                 </div>
               </div>
             )}
 
-            {/* Title */}
             <div>
               <label className="text-xs font-semibold text-gray-600 mb-1 block">
                 {newType === "notes" ? "Note Title" : "Title"}
@@ -354,28 +325,19 @@ const LecturerCourseDetail = () => {
               />
             </div>
 
-            {/* Subtitle — hide for notes */}
-            {newType !== "notes" && (
-              <div>
-                <label className="text-xs font-semibold text-gray-600 mb-1 block">Subtitle (optional)</label>
-                <Input
-                  value={newSubtitle}
-                  onChange={(e) => setNewSubtitle(e.target.value)}
-                  placeholder="e.g. PDF, Due: 20 Feb 2026"
-                  className="text-sm"
-                />
-              </div>
-            )}
-
             <div className="flex gap-2 pt-1">
               <Button variant="outline" className="flex-1" onClick={() => setAddDialog(false)}>Cancel</Button>
               <Button
                 className={`flex-1 text-white font-bold ${
-                  newType === "notes"
-                    ? "bg-indigo-600 hover:bg-indigo-700"
-                    : "bg-[#1a2a5e] hover:bg-[#132047]"
+                  newType === "notes" ? "bg-indigo-600 hover:bg-indigo-700" : "bg-[#1a2a5e] hover:bg-[#132047]"
                 }`}
-                onClick={addMaterial}
+                onClick={() => {
+                  if (newType === "notes" && targetSubUnit) {
+                    setAddDialog(false);
+                    openNotesEditor(targetSubUnit, newTitle);
+                    setNewTitle("");
+                  }
+                }}
               >
                 {newType === "notes" ? "Open Notes Editor →" : "Add Material"}
               </Button>
@@ -384,7 +346,7 @@ const LecturerCourseDetail = () => {
         </DialogContent>
       </Dialog>
 
-      {/* ── Add Section Dialog ──────────────────── */}
+      {/* ── Add Section Dialog ──────────────────────────────────────────────── */}
       <Dialog open={sectionDialog} onOpenChange={setSectionDialog}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
@@ -399,8 +361,15 @@ const LecturerCourseDetail = () => {
             />
             <div className="flex gap-2">
               <Button variant="outline" className="flex-1" onClick={() => setSectionDialog(false)}>Cancel</Button>
-              <Button className="flex-1 bg-[#1a2a5e] hover:bg-[#132047] text-white" onClick={addSection}>
-                Add Section
+              <Button
+                className="flex-1 bg-[#1a2a5e] hover:bg-[#132047] text-white"
+                onClick={handleAddSection}
+                disabled={creating}
+              >
+                {creating
+                  ? <><Loader2 size={13} className="animate-spin" /> Creating...</>
+                  : "Add Section"
+                }
               </Button>
             </div>
           </div>
