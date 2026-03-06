@@ -45,7 +45,11 @@ const LecturerCourseDetail = () => {
   const dispatch = useDispatch<AppDispatch>();
 
   const { selectedCourse, loading: courseLoading } = useSelector((state: RootState) => state.course);
-  const { subUnits, loading: subUnitLoading }       = useSelector((state: RootState) => state.subUnit);
+
+  // const { subUnits, loading: subUnitLoading }       = useSelector((state: RootState) => state.subUnit);
+  const { subUnits: rawCourses, loading: subUnitLoading } = useSelector((state: RootState) => state.subUnit);
+  const subUnits = Array.isArray(rawCourses) ? rawCourses : [];
+  
   const { jwt } = useSelector((state: RootState) => state.auth);
   const token = jwt || localStorage.getItem("jwt") || "";
 

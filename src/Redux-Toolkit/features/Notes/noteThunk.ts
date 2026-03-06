@@ -23,7 +23,7 @@ export const createNote = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("create note success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to create note");
@@ -33,20 +33,20 @@ export const createNote = createAsyncThunk(
     }
 );
 
-// GET /api/lecturer/courses/{courseId}/sub-units/{subUnitId}/notes
+// GET notes by sub-unit (lecturer)
 export const getNotesBySubUnitLecturer = createAsyncThunk(
     "notes/getBySubUnitLecturer",
     async (
-        { courseId, subUnitId, token }: { courseId: number; subUnitId: number; token: string },
+        { subUnitId, token }: {subUnitId: number; token: string },
         { rejectWithValue }
     ) => {
         try {
             const res = await api.get(
-                `/api/lecturer/courses/${courseId}/sub-units/${subUnitId}/notes`,
+                `/api/lecturer/sub-units/${subUnitId}/notes`,
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("get notes (lecturer) success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch notes");
@@ -66,7 +66,7 @@ export const getNotesBySubUnitStudent = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("get notes (student) success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch notes");

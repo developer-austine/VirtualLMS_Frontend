@@ -78,7 +78,7 @@ const NotesEditor = () => {
       return;
     }
     // Read content directly from the contentEditable div via the ref
-    const content = (ed.initContent as unknown as React.RefObject<HTMLDivElement>).current?.innerHTML ?? "";
+    const content = ed.editorRef.current?.innerHTML ?? "";
     if (!content.trim() || content === "<br>") {
       toast.error("Note has no content to publish");
       return;

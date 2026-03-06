@@ -21,6 +21,7 @@ const InlineNotesViewer = ({
   const token = jwt || localStorage.getItem("jwt") || "";
 
   useEffect(() => {
+    console.log("InlineNotesViewer mount:", { courseId, subUnitId, token: !!token });
     if (!token || !courseId || !subUnitId) return;
     dispatch(getNotesBySubUnitLecturer({ courseId, subUnitId, token }));
   }, [dispatch, courseId, subUnitId, token]);
