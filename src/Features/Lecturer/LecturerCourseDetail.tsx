@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { toast } from "sonner";
 import {
@@ -40,7 +40,7 @@ const typeIcon = (type: string, size = 15) => {
 };
 
 // ── Per-subunit materials — local state, same pattern as InlineNotesViewer ────
-const useSubUnitMaterials = (subUnitId: number, courseId: number, token: string) => {
+const useSubUnitMaterials = (subUnitId: number, courseId: number, token: string, refreshKey = 0) => {
   const [materials, setMaterials] = useState<any[]>([]);
   const [loading, setLoading]     = useState(false);
 
@@ -62,20 +62,24 @@ const useSubUnitMaterials = (subUnitId: number, courseId: number, token: string)
     }
   };
 
-  useEffect(() => { fetchMaterials(); }, [subUnitId, token]);
+  // Refetch whenever subUnitId, token, or refreshKey changes
+  // refreshKey bumps on every navigation back to this page — catches newly added quizzes
+  useEffect(() => { fetchMaterials(); }, [subUnitId, token, refreshKey]);
   return { materials, loading, refetch: fetchMaterials };
 };
 
+// ── Section row — owns its own materials list ─────────────────────────────────
 const SectionRow = ({
   section, courseId, token, isCollapsed, onToggle,
-  onAddNotes, onAddMaterial, navigate, courseParamId,
+  onAddNotes, onAddMaterial, navigate, courseParamId, refreshKey,
 }: {
   section: any; courseId: number; token: string; isCollapsed: boolean;
   onToggle: () => void; onAddNotes: () => void;
   onAddMaterial: (refetch: () => void) => void;
   navigate: ReturnType<typeof useNavigate>; courseParamId: string | undefined;
+  refreshKey?: number;
 }) => {
-  const { materials, loading: matLoading, refetch } = useSubUnitMaterials(section.id, courseId, token);
+  const { materials, loading: matLoading, refetch } = useSubUnitMaterials(section.id, courseId, token, refreshKey ?? 0);
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden">
@@ -180,6 +184,7 @@ const SectionRow = ({
   );
 };
 
+// ── Main page ─────────────────────────────────────────────────────────────────
 const LecturerCourseDetail = () => {
   const { id }   = useParams();
   const navigate = useNavigate();
@@ -191,6 +196,8 @@ const LecturerCourseDetail = () => {
   const { jwt } = useSelector((state: RootState) => state.auth);
   const token = jwt || localStorage.getItem("jwt") || "";
 
+  const location = useLocation();
+  const [refreshKey,      setRefreshKey]      = useState(0);
   const [collapsed,       setCollapsed]       = useState<Set<number>>(new Set());
   const [sectionDialog,   setSectionDialog]   = useState(false);
   const [newSectionTitle, setNewSectionTitle] = useState("");
@@ -213,6 +220,12 @@ const LecturerCourseDetail = () => {
     dispatch(getLecturerCourseById({ token, courseId: Number(id) }));
     dispatch(getSubUnitsByCourse({ token, courseId: Number(id) }));
   }, [dispatch, id, token]);
+
+  // Bump refreshKey every time we navigate back to this page (e.g. after quiz creation)
+  // SectionRow passes refreshKey to useSubUnitMaterials so it refetches automatically
+  useEffect(() => {
+    setRefreshKey(k => k + 1);
+  }, [location.key]);
 
   const toggleSection = (sid: number) =>
     setCollapsed(p => { const n = new Set(p); n.has(sid) ? n.delete(sid) : n.add(sid); return n; });
@@ -383,6 +396,7 @@ const LecturerCourseDetail = () => {
                   onAddMaterial={(refetch) => openAddMaterial(section.id, refetch)}
                   navigate={navigate}
                   courseParamId={id}
+                  refreshKey={refreshKey}
                 />
               ))
             )}

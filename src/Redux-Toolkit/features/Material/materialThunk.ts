@@ -14,7 +14,6 @@ interface CreateMaterialPayload {
         type: MaterialType;
         orderIndex?: number;
     };
-    file?: File | null;
 }
 
 interface UpdateMaterialPayload {
@@ -29,29 +28,18 @@ interface UpdateMaterialPayload {
 }
 
 // ── POST /api/lecturer/courses/{courseId}/sub-units/{subUnitId}/materials ─────
-// Uses multipart/form-data — sends JSON as "data" part + optional file
+// Sends plain JSON — file uploads use the separate /upload endpoint with base64
 export const createMaterial = createAsyncThunk(
     "material/create",
-    async ({ courseId, subUnitId, token, data, file }: CreateMaterialPayload, { rejectWithValue }) => {
+    async ({ courseId, subUnitId, token, data }: CreateMaterialPayload, { rejectWithValue }) => {
         try {
-            const formData = new FormData();
-
-            // Send the JSON fields as a Blob with application/json type
-            formData.append(
-                "data",
-                new Blob([JSON.stringify(data)], { type: "application/json" })
-            );
-
-            if (file) {
-                formData.append("file", file);
-            }
-
             const res = await api.post(
                 `/api/lecturer/courses/${courseId}/sub-units/${subUnitId}/materials`,
-                formData,
+                data,  // plain JSON object — no FormData, no Blob
                 {
                     headers: {
                         Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
                     },
                 }
             );
@@ -141,7 +129,7 @@ export const deleteMaterial = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("delete material success", materialId);
-            return materialId; // Return ID so slice can remove it from state
+            return materialId;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to delete material");
