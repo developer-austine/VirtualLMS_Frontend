@@ -12,15 +12,16 @@ import { Textarea } from "@/components/ui/textarea";
 import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
 import { useBanner } from "@/hooks/useBanner";
 
+// ── Types ─────────────────────────────────────────────────────────────────────
 interface Choice {
   letter: string;
   text: string;
 }
 
 interface Question {
-  id: string; 
+  id: string; // local only for UI key
   questionText: string;
-  correctAnswer: string;
+  correctAnswer: string; // letter e.g. "A"
   choices: Choice[];
 }
 
@@ -33,6 +34,7 @@ const blankQuestion = (): Question => ({
   choices: LETTERS.map((l) => ({ letter: l, text: "" })),
 });
 
+// ── Question card ─────────────────────────────────────────────────────────────
 const QuestionCard = ({
   question, index, total,
   onChange, onDelete, onMoveUp, onMoveDown,
@@ -142,15 +144,17 @@ const QuestionCard = ({
   );
 };
 
+// ── Main page ─────────────────────────────────────────────────────────────────
 const LecturerQuizBuilder = () => {
-  const { id } = useParams();           
+  const { id } = useParams();           // courseId from URL
   const navigate  = useNavigate();
   const dispatch  = useDispatch<AppDispatch>();
   const location  = useLocation();
 
-  const { jwt } = useSelector((state: RootState) => state.auth) as { jwt?: string };
+  const { jwt } = useSelector((state: RootState) => state.auth);
   const token = jwt || localStorage.getItem("jwt") || "";
 
+  // Passed from LecturerCourseDetail via navigate state
   const { subUnitId, courseId: stateCourseId, title: preTitle } = (location.state ?? {}) as {
     subUnitId?: number; courseId?: number; title?: string;
   };
@@ -210,6 +214,7 @@ const LecturerQuizBuilder = () => {
     try {
       const { default: api } = await import("@/utils/api");
 
+      // Step 1 — Save the quiz/assignment with all questions
       const payload = {
         title: title.trim(),
         description: description.trim() || undefined,
@@ -223,13 +228,33 @@ const LecturerQuizBuilder = () => {
         })),
       };
 
-      await api.post(
+      const assignmentRes = await api.post(
         `/api/lecturer/courses/${courseId}/sub-units/${subUnitId}/assignments`,
         payload,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      toast.success("Quiz created successfully!");
+      // Step 2 — Create a Material record of type QUIZ so it shows in the section
+      // The material url stores the assignment id for later retrieval
+      const assignmentId = assignmentRes.data?.data?.id ?? assignmentRes.data?.id;
+      await api.post(
+        `/api/lecturer/courses/${courseId}/sub-units/${subUnitId}/materials`,
+        {
+          title: title.trim(),
+          description: description.trim() || undefined,
+          type: "QUIZ",
+          orderIndex: 0,
+          url: assignmentId ? String(assignmentId) : undefined,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      toast.success("Quiz published successfully!");
       navigate(`/lecturer/course/${id}`, { replace: true });
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to create quiz");
