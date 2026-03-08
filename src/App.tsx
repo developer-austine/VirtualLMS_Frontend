@@ -34,6 +34,7 @@ import AdminAssignLecturer   from "./Features/Admin/AdminAssignLecturer";
 
 //shadcn
 import { Toaster } from "sonner";
+import LecturerQuizBuilder from "./Features/Lecturer/Lecturerquizbuilder";
 
 function App() {
   return (
@@ -62,6 +63,8 @@ function App() {
               <Route path="/lecturer/course/:id/notes/:noteId" element={<NotesEditor />} />
               <Route path="/lecturer/schedule"                 element={<ScheduleClass />} />
               <Route path="/lecturer/announcements"            element={<Announcements />} />
+              <Route path="/lecturer/course/:id/quiz/new" element={<LecturerQuizBuilder />} />
+              <Route path="/lecturer/course/:id/quiz/:quizId" element={<LecturerQuizBuilder />} />
 
               {/* ── Admin ── */}
               <Route path="/admin/dashboard" element={<AdminDashboard />} />
