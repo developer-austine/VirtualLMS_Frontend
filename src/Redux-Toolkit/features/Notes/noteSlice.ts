@@ -59,7 +59,7 @@ const notesSlice = createSlice({
             .addCase(createNote.fulfilled, (state, action) => {
                 state.loading = false;
                 // Backend returns ApiResponse wrapper — extract .data
-                state.notes.push(action.payload.data);
+                state.notes.push(action.payload);
             })
             .addCase(createNote.rejected, (state, action) => {
                 state.loading = false;

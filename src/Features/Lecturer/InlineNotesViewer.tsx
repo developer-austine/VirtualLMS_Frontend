@@ -1,112 +1,130 @@
-import { useEffect } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { Loader2 } from "lucide-react";
-import type { AppDispatch, RootState } from "@/Redux-Toolkit/globalState";
-import { getNotesBySubUnitLecturer } from "@/Redux-Toolkit/features/Notes/noteThunk";
+import { useEffect, useState } from "react";
+import { useSelector } from "react-redux";
+import { Loader2, NotebookPen, Pencil } from "lucide-react";
+import type { RootState } from "@/Redux-Toolkit/globalState";
+import api from "@/utils/api";
+
+interface NotesDto {
+  id: number;
+  title: string;
+  content: string;
+  updatedAt: string;
+  createdByLecturerName: string;
+}
 
 interface Props {
-  subUnitId: number;   
-  courseId:  number;
+  subUnitId: number;
+  courseId: number;
   isLecturer?: boolean;
   onEdit?: () => void;
 }
 
-const InlineNotesViewer = ({
-  subUnitId, courseId, isLecturer = false, onEdit,
-}: Props) => {
-  const dispatch = useDispatch<AppDispatch>();
-
-  const { notes, loading } = useSelector((state: RootState) => state.notes);
-  const { jwt }            = useSelector((state: RootState) => state.auth);
+const InlineNotesViewer = ({ subUnitId, isLecturer = false, onEdit }: Props) => {
+  const { jwt } = useSelector((state: RootState) => state.auth);
   const token = jwt || localStorage.getItem("jwt") || "";
 
-  useEffect(() => {
-    if (!token || !courseId || !subUnitId) return;
-    dispatch(getNotesBySubUnitLecturer({ courseId, subUnitId, token }));
-  }, [dispatch, courseId, subUnitId, token]);
+  const [notes,   setNotes]   = useState<NotesDto[]>([]);
+  const [loading, setLoading] = useState(false);
 
-  // ── Loading ───────────────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!token || !subUnitId) return;
+
+    const fetchNotes = async () => {
+      setLoading(true);
+      try {
+        const res = await api.get(
+          `/api/lecturer/sub-units/${subUnitId}/notes`,
+          { headers: { Authorization: `Bearer ${token}` } }
+        );
+        const data = res.data.data ?? res.data;
+        setNotes(Array.isArray(data) ? data : []);
+      } catch {
+        setNotes([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchNotes();
+  }, [subUnitId, token]);
+
   if (loading) {
     return (
-      <div className="mx-4 mb-3 px-5 py-4 rounded-xl border border-indigo-100 bg-indigo-50/40 flex items-center gap-2 text-indigo-400">
-        <Loader2 size={14} className="animate-spin" />
-        <span className="text-xs font-semibold">Loading notes...</span>
+      <div className="px-4 py-3 flex items-center gap-2 text-gray-400">
+        <Loader2 size={13} className="animate-spin" />
+        <span className="text-xs">Loading notes...</span>
       </div>
     );
   }
 
-  // ── No notes yet ──────────────────────────────────────────────────────────
   if (notes.length === 0) {
     if (!isLecturer) return null;
     return (
-      <div className="mx-4 mb-3 px-5 py-4 rounded-xl border-2 border-dashed border-indigo-200 bg-indigo-50/50 text-center">
-        <p className="text-xs text-indigo-400 font-semibold italic">
-          No notes published yet. Click "Edit Notes" to start writing.
-        </p>
+      <div className="px-4 py-3 flex items-center justify-between border-t border-gray-100">
+        <div className="flex items-center gap-2 text-gray-400">
+          <NotebookPen size={13} />
+          <span className="text-xs italic">No notes published yet.</span>
+        </div>
+        {onEdit && (
+          <button
+            onClick={onEdit}
+            className="flex items-center gap-1 text-xs font-semibold text-indigo-500 hover:underline"
+          >
+            <Pencil size={11} /> Add Notes
+          </button>
+        )}
       </div>
     );
   }
 
-  // ── Render each note ──────────────────────────────────────────────────────
   return (
-    <div className="mx-4 mb-3 space-y-3">
+    <div className="divide-y divide-gray-100">
       {notes.map((note) => (
-        <div key={note.id} className="rounded-xl border border-indigo-100 overflow-hidden shadow-sm">
+        <div key={note.id} className="px-4 py-4">
 
-          {/* Note header bar */}
-          <div className="flex items-center justify-between px-5 py-2.5 bg-gradient-to-r from-indigo-600 to-indigo-500">
+          {/* Title row */}
+          <div className="flex items-center justify-between mb-3">
             <div className="flex items-center gap-2">
-              <span className="text-white font-black text-sm">{note.title}</span>
-              <span className="text-[10px] font-bold bg-white/20 text-white px-2 py-0.5 rounded-full">
-                Published
-              </span>
-            </div>
-            <div className="flex items-center gap-3">
-              <span className="text-white/60 text-[10px]">
+              <NotebookPen size={13} className="text-indigo-400 flex-shrink-0" />
+              <span className="text-sm font-bold text-[#1a2a5e]">{note.title}</span>
+              <span className="text-[10px] text-gray-400">
                 {note.updatedAt
                   ? new Date(note.updatedAt).toLocaleDateString("en-GB", {
                       day: "numeric", month: "short", year: "numeric",
                     })
-                  : "—"
-                }
+                  : ""}
               </span>
-              {isLecturer && onEdit && (
-                <button
-                  onClick={onEdit}
-                  className="text-[11px] font-bold text-white bg-white/20 hover:bg-white/30 px-3 py-1 rounded-full transition-colors"
-                >
-                  ✏️ Edit Notes
-                </button>
-              )}
             </div>
+            {isLecturer && onEdit && (
+              <button
+                onClick={onEdit}
+                className="flex items-center gap-1 text-[11px] font-semibold text-indigo-500 hover:underline"
+              >
+                <Pencil size={10} /> Edit
+              </button>
+            )}
           </div>
 
-          {/* Rendered note content */}
+          {/* Note content — plain white, lined paper feel */}
           <div
-            className="px-10 py-8 bg-white"
+            className="px-6 py-5 rounded-lg border border-gray-100 bg-white"
             style={{
-              backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #e5e7eb 31px, #e5e7eb 32px)",
-              backgroundPositionY: "40px",
+              backgroundImage: "repeating-linear-gradient(transparent, transparent 31px, #f3f4f6 31px, #f3f4f6 32px)",
+              backgroundPositionY: "8px",
               fontFamily: "'Georgia', serif",
               lineHeight: "2rem",
-              minHeight: "120px",
             }}
           >
-            <div className="relative">
-              <div className="absolute -left-6 top-0 bottom-0 w-px bg-red-200/60" />
-              <div
-                className="prose max-w-none text-[#1a2a5e] text-base leading-8 note-content"
-                dangerouslySetInnerHTML={{ __html: note.content }}
-              />
-            </div>
+            <div
+              className="prose prose-sm max-w-none text-gray-800 leading-8"
+              dangerouslySetInnerHTML={{ __html: note.content }}
+            />
           </div>
 
           {/* By line */}
-          <div className="px-5 py-2 bg-gray-50 border-t border-gray-100">
-            <p className="text-[10px] text-gray-400 font-semibold">
-              By {note.createdByLecturerName ?? "Lecturer"}
-            </p>
-          </div>
+          <p className="mt-2 text-[10px] text-gray-400">
+            By {note.createdByLecturerName ?? "Lecturer"}
+          </p>
         </div>
       ))}
     </div>

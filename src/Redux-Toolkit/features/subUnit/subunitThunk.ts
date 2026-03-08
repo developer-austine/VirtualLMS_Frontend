@@ -23,7 +23,7 @@ export const createSubUnit = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("create sub-unit success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to create sub-unit");
@@ -43,7 +43,7 @@ export const getSubUnitsByCourse = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("get sub-units (lecturer) success", res.data);
-            return res.data;
+            return res.data.data ?? res.data;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to fetch sub-units");
