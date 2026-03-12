@@ -10,6 +10,7 @@ import branchReducer from "./features/Branch/branchSlice"
 import adminReducer from "./features/Admin/adminSlice"
 import assignmentReducer from "./features/Assignments/assignmentSlice"
 import materialReducer from "./features/Material/materialSlice"
+import attemptReducer from "./features/Attempt/attemptSlice"
 
 const globalState = configureStore({
     reducer: {
@@ -24,6 +25,7 @@ const globalState = configureStore({
         branch: branchReducer,
         assignment: assignmentReducer,
         material: materialReducer,
+        attempt: attemptReducer,
     }
 })
 
