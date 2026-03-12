@@ -68,7 +68,6 @@ const useSubUnitMaterials = (subUnitId: number, courseId: number, token: string,
   return { materials, loading, refetch: fetchMaterials };
 };
 
-// ── Section row — owns its own materials list ─────────────────────────────────
 const SectionRow = ({
   section, courseId, token, isCollapsed, onToggle,
   onAddNotes, onAddMaterial, navigate, courseParamId, refreshKey,
