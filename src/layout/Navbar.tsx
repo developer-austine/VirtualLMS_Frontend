@@ -6,8 +6,9 @@ import { useSelector } from "react-redux";
 import type { RootState } from "@/Redux-Toolkit/globalState";
 
 const studentLinks = [
-  { label: "Dashboard",  href: "/dashboard"  },
-  { label: "My Courses", href: "/my-courses"  },
+  { label: "Home",       href: "/student/home" },
+  { label: "Dashboard",  href: "/dashboard"    },
+  { label: "My Courses", href: "/my-courses"   },
 ];
 
 const lecturerLinks = [
@@ -35,19 +36,17 @@ const eLibraryItems = [
 ];
 
 const Navbar = () => {
-  // ✅ Redux instead of useAuth
   const { jwt, user } = useSelector((state: RootState) => state.auth);
   const isAuthenticated = !!jwt;
-  const role = user?.role; // "ROLE_ADMIN" | "ROLE_LECTURER" | "ROLE_STUDENT" | undefined
+  const role = user?.role;
 
   const { settings } = useSystem();
   const location = useLocation();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [eLibOpen,   setELibOpen]   = useState(false);
 
-  // ✅ Match against Redux role strings (ROLE_ADMIN, ROLE_LECTURER, ROLE_STUDENT)
   const navLinks =
-    !isAuthenticated        ? [] :
+    !isAuthenticated         ? [] :
     role === "ROLE_LECTURER" ? lecturerLinks :
     role === "ROLE_ADMIN"    ? adminLinks    :
     studentLinks;
@@ -66,11 +65,17 @@ const Navbar = () => {
 
         {/* Logo + name */}
         <Link to="/" className="flex items-center gap-3">
-          <div className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 flex-shrink-0"
-            style={{ borderColor: navText }}>
+          <div
+            className="w-14 h-14 rounded-full bg-white flex items-center justify-center overflow-hidden border-2 flex-shrink-0"
+            style={{ borderColor: navText }}
+          >
             {settings.logoUrl ? (
-              <img src={settings.logoUrl} alt="Logo" className="w-full h-full object-contain"
-                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }} />
+              <img
+                src={settings.logoUrl}
+                alt="Logo"
+                className="w-full h-full object-contain"
+                onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
+              />
             ) : null}
           </div>
           <div className="flex flex-col">
@@ -86,14 +91,23 @@ const Navbar = () => {
         {/* Desktop nav */}
         <div className="hidden md:flex items-center gap-1">
           {navLinks.map((link) => (
-            <Link key={link.label} to={link.href}
+            <Link
+              key={link.label}
+              to={link.href}
               className="px-4 py-2 rounded-sm font-semibold text-sm transition-colors duration-200"
-              style={isActive(link.href)
-                ? { backgroundColor: "white", color: navText }
-                : { color: "white" }
+              style={
+                isActive(link.href)
+                  ? { backgroundColor: "white", color: navText }
+                  : { color: "white" }
               }
-              onMouseEnter={(e) => { if (!isActive(link.href)) (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.2)"; }}
-              onMouseLeave={(e) => { if (!isActive(link.href)) (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+              onMouseEnter={(e) => {
+                if (!isActive(link.href))
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "rgba(255,255,255,0.2)";
+              }}
+              onMouseLeave={(e) => {
+                if (!isActive(link.href))
+                  (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+              }}
             >
               {link.label}
             </Link>
@@ -107,18 +121,36 @@ const Navbar = () => {
           )}
 
           {/* E-Library dropdown */}
-          <div className="relative" onMouseEnter={() => setELibOpen(true)} onMouseLeave={() => setELibOpen(false)}>
+          <div
+            className="relative"
+            onMouseEnter={() => setELibOpen(true)}
+            onMouseLeave={() => setELibOpen(false)}
+          >
             <button className="flex items-center gap-1 px-4 py-2 rounded-sm font-semibold text-sm text-white hover:bg-white/20 transition-colors">
-              E-Library <ChevronDown size={14} className={`transition-transform duration-200 ${eLibOpen ? "rotate-180" : ""}`} />
+              E-Library{" "}
+              <ChevronDown
+                size={14}
+                className={`transition-transform duration-200 ${eLibOpen ? "rotate-180" : ""}`}
+              />
             </button>
-            <div className={`absolute top-full right-0 mt-1 w-56 bg-white shadow-xl rounded-sm border-t-2 transition-all duration-200 ${eLibOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2"}`}
-              style={{ borderColor: navBg }}>
+            <div
+              className={`absolute top-full right-0 mt-1 w-56 bg-white shadow-xl rounded-sm border-t-2 transition-all duration-200 ${
+                eLibOpen ? "opacity-100 visible translate-y-0" : "opacity-0 invisible -translate-y-2"
+              }`}
+              style={{ borderColor: navBg }}
+            >
               {eLibraryItems.map((item) => (
-                <Link key={item.label} to={item.href}
+                <Link
+                  key={item.label}
+                  to={item.href}
                   className="block px-4 py-2.5 text-sm font-medium transition-colors border-b border-gray-100 last:border-none"
                   style={{ color: navText }}
-                  onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = navBg + "22"; }}
-                  onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.backgroundColor = "transparent"; }}
+                  onMouseEnter={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = navBg + "22";
+                  }}
+                  onMouseLeave={(e) => {
+                    (e.currentTarget as HTMLElement).style.backgroundColor = "transparent";
+                  }}
                 >
                   {item.label}
                 </Link>
@@ -128,8 +160,11 @@ const Navbar = () => {
         </div>
 
         {/* Mobile toggle */}
-        <button className="md:hidden p-2 rounded" style={{ color: navText, backgroundColor: "rgba(255,255,255,0.3)" }}
-          onClick={() => setMobileOpen(!mobileOpen)}>
+        <button
+          className="md:hidden p-2 rounded"
+          style={{ color: navText, backgroundColor: "rgba(255,255,255,0.3)" }}
+          onClick={() => setMobileOpen(!mobileOpen)}
+        >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
@@ -138,18 +173,24 @@ const Navbar = () => {
       {mobileOpen && (
         <div className="md:hidden px-6 pb-4" style={{ backgroundColor: navText }}>
           {navLinks.map((link) => (
-            <Link key={link.label} to={link.href}
+            <Link
+              key={link.label}
+              to={link.href}
               className="block py-2.5 font-semibold border-b border-white/10 transition-colors"
               style={isActive(link.href) ? { color: navBg } : { color: "white" }}
-              onClick={() => setMobileOpen(false)}>
+              onClick={() => setMobileOpen(false)}
+            >
               {link.label}
             </Link>
           ))}
           <p className="py-2.5 text-white font-semibold border-b border-white/10">E-Library</p>
           {eLibraryItems.map((item) => (
-            <Link key={item.label} to={item.href}
+            <Link
+              key={item.label}
+              to={item.href}
               className="block py-2 pl-4 text-sm text-white/70 hover:text-white"
-              onClick={() => setMobileOpen(false)}>
+              onClick={() => setMobileOpen(false)}
+            >
               {item.label}
             </Link>
           ))}
