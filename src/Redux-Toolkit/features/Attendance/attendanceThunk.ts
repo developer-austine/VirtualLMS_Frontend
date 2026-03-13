@@ -2,19 +2,13 @@ import api from "@/utils/api";
 import { createAsyncThunk } from "@reduxjs/toolkit";
 import axios from "axios";
 
-interface StudentAttendanceEntry {
-    studentId: number;
-    isPresent: boolean;
-    notes?: string;
-}
-
 interface AttendancePayload {
     courseId: number;
     token: string;
     data: {
         title: string;
         date: string; // LocalDate as ISO string e.g. "2026-03-03"
-        attendances: StudentAttendanceEntry[];
+        // attendances removed — students self-mark now
     };
 }
 
@@ -24,7 +18,7 @@ interface UpdateAttendancePayload {
     data: {
         title: string;
         date: string;
-        attendances: StudentAttendanceEntry[];
+        // attendances removed — students self-mark now
     };
 }
 
@@ -35,7 +29,7 @@ export const takeAttendance = createAsyncThunk(
         try {
             const res = await api.post(
                 `/api/lecturer/courses/${courseId}/attendance`,
-                data,
+                { title: data.title, date: data.date },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("take attendance success", res.data);
@@ -96,7 +90,7 @@ export const updateAttendance = createAsyncThunk(
         try {
             const res = await api.put(
                 `/api/lecturer/attendance/${sessionId}`,
-                data,
+                { title: data.title, date: data.date },
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("update attendance success", res.data);
@@ -120,7 +114,7 @@ export const deleteAttendanceSession = createAsyncThunk(
                 { headers: { Authorization: `Bearer ${token}` } }
             );
             console.log("delete attendance session success", res.data);
-            return sessionId; // return sessionId to remove from state
+            return sessionId;
         } catch (error) {
             if (axios.isAxiosError(error)) {
                 return rejectWithValue(error.response?.data?.message || "Failed to delete attendance session");

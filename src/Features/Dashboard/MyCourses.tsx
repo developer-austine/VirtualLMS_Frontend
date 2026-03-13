@@ -188,7 +188,7 @@ const MyCourses = () => {
 
                       <div className="flex items-center justify-between">
                         <span className="text-xs text-gray-400">
-                          {course.totalEnrolledStudents ?? 0} students
+                         
                         </span>
 
                         {/* Stop propagation so 3-dot menu doesn't trigger card click */}
@@ -227,7 +227,7 @@ const MyCourses = () => {
                       <p className="text-xs text-gray-400">{course.semester}</p>
                     </div>
                     <span className="text-xs text-gray-400 whitespace-nowrap">
-                      {course.totalEnrolledStudents ?? 0} students
+                     
                     </span>
                   </div>
                 )

@@ -14,6 +14,7 @@ import QuizPage         from "./Features/Dashboard/QuizPage";
 import AssignmentDetail from "./Features/Dashboard/AssignmentDetail";
 import StudentHome      from "./Features/Student/StudentHome";
 import StudentEnrollPage from "./Features/Student/StudentEnrollPage";
+import AttendancePage from "./Features/Student/AttendancePage";
 
 // Lecturer
 import LecturerDashboard    from "./Features/Lecturer/LecturerDashboard";
@@ -24,6 +25,8 @@ import Grades               from "./Features/Lecturer/Grades";
 import ScheduleClass        from "./Features/Lecturer/ScheduleClass";
 import Announcements        from "./Features/Lecturer/Announcements";
 import NotesEditor          from "./Features/Lecturer/NotesEditor";
+import LecturerAttendance from "./Features/Lecturer/Lecturerattendance";
+
 
 // Admin
 import AdminDashboard        from "./Features/Admin/AdminDashboard";
@@ -57,6 +60,7 @@ function App() {
             <Route path="/course/:id"                element={<CourseDetail />} />
             <Route path="/course/:id/quiz/:quizId"   element={<QuizPage />} />
             <Route path="/assignment/:assignmentId"  element={<AssignmentDetail />} />
+            <Route path="/course/:courseId/attendance" element={<AttendancePage />} />
 
             {/* ── Lecturer ── */}
             <Route path="/lecturer/dashboard"                element={<LecturerDashboard />} />
@@ -69,6 +73,7 @@ function App() {
             <Route path="/lecturer/announcements"            element={<Announcements />} />
             <Route path="/lecturer/course/:id/quiz/new"      element={<LecturerQuizBuilder />} />
             <Route path="/lecturer/course/:id/quiz/:quizId"  element={<LecturerQuizBuilder />} />
+            <Route path="/lecturer/course/:id/attendance"    element={<LecturerAttendance />} />
 
             {/* ── Admin ── */}
             <Route path="/admin/dashboard"         element={<AdminDashboard />} />
