@@ -46,6 +46,9 @@ const initialState: AttendanceState = {
     error: null,
 };
 
+// Helper — backend always wraps in { data, message, success }
+const unwrap = (payload: any) => payload?.data ?? payload;
+
 const attendanceSlice = createSlice({
     name: "attendance",
     initialState,
@@ -71,8 +74,10 @@ const attendanceSlice = createSlice({
             })
             .addCase(takeAttendance.fulfilled, (state, action) => {
                 state.loading = false;
-                // Backend returns ApiResponse wrapper — extract .data
-                state.sessions.push(action.payload.data);
+                const session = unwrap(action.payload);
+                if (session && Array.isArray(state.sessions)) {
+                    state.sessions.push(session);
+                }
             })
             .addCase(takeAttendance.rejected, (state, action) => {
                 state.loading = false;
@@ -86,7 +91,9 @@ const attendanceSlice = createSlice({
             })
             .addCase(getAttendanceSessions.fulfilled, (state, action) => {
                 state.loading = false;
-                state.sessions = action.payload;
+                // Backend returns { data: [...], message, success } — extract the array
+                const data = unwrap(action.payload);
+                state.sessions = Array.isArray(data) ? data : [];
             })
             .addCase(getAttendanceSessions.rejected, (state, action) => {
                 state.loading = false;
@@ -100,7 +107,7 @@ const attendanceSlice = createSlice({
             })
             .addCase(getAttendanceSessionById.fulfilled, (state, action) => {
                 state.loading = false;
-                state.selectedSession = action.payload;
+                state.selectedSession = unwrap(action.payload);
             })
             .addCase(getAttendanceSessionById.rejected, (state, action) => {
                 state.loading = false;
@@ -114,12 +121,12 @@ const attendanceSlice = createSlice({
             })
             .addCase(updateAttendance.fulfilled, (state, action) => {
                 state.loading = false;
-                // Backend returns ApiResponse wrapper — extract .data
-                const updated = action.payload.data;
-                state.selectedSession = updated;
-                // Sync update into sessions list
-                const index = state.sessions.findIndex(s => s.id === updated.id);
-                if (index !== -1) state.sessions[index] = updated;
+                const updated = unwrap(action.payload);
+                if (updated) {
+                    state.selectedSession = updated;
+                    const index = state.sessions.findIndex(s => s.id === updated.id);
+                    if (index !== -1) state.sessions[index] = updated;
+                }
             })
             .addCase(updateAttendance.rejected, (state, action) => {
                 state.loading = false;
@@ -133,9 +140,7 @@ const attendanceSlice = createSlice({
             })
             .addCase(deleteAttendanceSession.fulfilled, (state, action) => {
                 state.loading = false;
-                // action.payload is the sessionId we returned
                 state.sessions = state.sessions.filter(s => s.id !== action.payload);
-                // Clear selected if it was the deleted one
                 if (state.selectedSession?.id === action.payload) {
                     state.selectedSession = null;
                 }

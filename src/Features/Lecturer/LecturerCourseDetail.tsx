@@ -6,6 +6,7 @@ import {
   ChevronDown, ChevronUp, ArrowLeft, Plus, Megaphone,
   Link2, Video, FileText, HelpCircle,
   Users, BarChart2, NotebookPen, Loader2, BookOpen, Upload, X,
+  ClipboardList,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -362,6 +363,10 @@ const LecturerCourseDetail = () => {
               </div>
               <div className="flex items-center gap-2">
                 <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200" onClick={() => navigate(`/lecturer/course/${id}/students`)}><Users size={13} /> Students</Button>
+                <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200"
+                  onClick={() => navigate(`/lecturer/course/${id}/attendance`)}>
+                  <ClipboardList size={13} /> Attendance
+                </Button>
                 <Button size="sm" variant="outline" className="text-xs gap-1 border-gray-200" onClick={() => navigate(`/lecturer/course/${id}/grades`)}><BarChart2 size={13} /> Grades</Button>
                 <Button size="sm" className="text-xs gap-1 bg-[#1a2a5e] hover:bg-[#132047] text-white" onClick={() => setSectionDialog(true)}><Plus size={13} /> Add Section</Button>
               </div>
